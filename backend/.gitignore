@@ -1,0 +1,34 @@
+# ==============================================================================
+# PotholeScan Backend Git Ignore
+# ==============================================================================
+
+# Python Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Bytecode & Caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment Secrets (CRITICAL: NEVER COMMIT)
+.env
+.env.*
+*.pem
+*.key
+
+# Local Datasets (100% Local / Never Commit)
+data/
+data/raw/
+data/processed/
+datasets/
+runs/
+
+# Logs & Temp
+*.log
+logs/
+*.tmp

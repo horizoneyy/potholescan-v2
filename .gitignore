@@ -1,0 +1,73 @@
+# ==============================================================================
+# PotholeScan - Production-Safe Git Ignore
+# ==============================================================================
+
+# --- Secrets & Environment Configurations (CRITICAL: NEVER COMMIT) ---
+.env
+.env.*
+*.env
+backend/.env
+backend/.env.*
+*.pem
+*.key
+*.cert
+*.crt
+
+# --- Python Virtual Environments & Packages ---
+.venv/
+venv/
+env/
+ENV/
+backend/.venv/
+backend/venv/
+
+# --- Python Bytecode & Cache ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+*.coverage.*
+
+# --- Local AI Training Datasets (100% Local / Isolated) ---
+backend/data/
+backend/data/raw/
+backend/data/processed/
+data/
+datasets/
+runs/
+backend/runs/
+
+# --- Frontend Node & Build Artifacts ---
+node_modules/
+dist/
+build/
+.cache/
+.vite/
+vite.config.*.timestamp-*
+*.tsbuildinfo
+
+# --- Logs & Temporary Files ---
+logs/
+*.log
+*-debug.log*
+.tmp-*
+*.tmp
+.claude-replay.*
+
+# --- IDE & Operating System Metadata ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Platform-managed agentplat state (Figma Make) ---
+.figma/
+/.plugins/
+/.opencode-skills/

@@ -1,0 +1,35 @@
+# PotholeScan Backend Dependencies
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+python-multipart>=0.0.9
+
+# Computer Vision & Deep Learning (Ultralytics YOLOv8)
+ultralytics>=8.3.0
+opencv-python-headless>=4.10.0
+pillow>=10.3.0
+
+# Geospatial & Metadata
+exifread>=3.0.0
+
+# Supabase Cloud Database & Storage
+supabase>=2.5.0
+postgrest>=0.16.0
+
+# Authentication & Security
+python-jose[cryptography]>=3.3.0
+passlib[argon2]>=1.7.4
+argon2-cffi>=23.1.0
+
+# Rate Limiting & PDF Generation
+slowapi>=0.1.9
+reportlab>=4.2.0
+
+# Dataset Automation
+kagglehub>=0.2.5
+
+# Testing & Utilities
+pytest>=8.2.0
+httpx>=0.27.0
+python-dotenv>=1.0.1
