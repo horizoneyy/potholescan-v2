@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react'
 import { Logo } from './ui'
 import { MapView } from './MapView'
 import type { Report, User } from '../data'
@@ -72,7 +72,7 @@ export function Login({
           <p className="mt-3 text-slate-500">
             Khusus petugas lapangan PUPR dan administrator.
           </p>
-          <label className="mt-8 block text-sm font-medium">
+          <label className="mt-8 block text-sm font-medium text-slate-700">
             Username
             <input
               value={u}
@@ -80,11 +80,12 @@ export function Login({
                 setU(e.target.value)
                 setErr('')
               }}
+              placeholder="Masukkan username Anda"
               autoComplete="username"
-              className="mt-1.5 w-full rounded-2xl border border-line bg-white px-4 py-3"
+              className="mt-1.5 w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
             />
           </label>
-          <label className="mt-4 block text-sm font-medium">
+          <label className="mt-4 block text-sm font-medium text-slate-700">
             Kata sandi
             <input
               type="password"
@@ -93,21 +94,34 @@ export function Login({
                 setP(e.target.value)
                 setErr('')
               }}
+              placeholder="••••••••"
               autoComplete="current-password"
-              className="mt-1.5 w-full rounded-2xl border border-line bg-white px-4 py-3"
+              className="mt-1.5 w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
             />
           </label>
-          {err && <p className="mt-3 text-sm text-red-600">{err}</p>}
+          {err && (
+            <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+              <AlertCircle className="size-4 shrink-0" />
+              <span>{err}</span>
+            </div>
+          )}
           <button
             disabled={loading}
-            className="mt-6 w-full rounded-2xl bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
           >
-            {loading ? 'Memverifikasi…' : 'Masuk'}
+            {loading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Memverifikasi…
+              </>
+            ) : (
+              'Masuk'
+            )}
           </button>
         </form>
       </div>
       <div className="relative hidden flex-col justify-between overflow-hidden bg-slate-50 p-10 lg:flex">
-        <MapView reports={reports} className="absolute inset-0 opacity-40" />
+        <MapView reports={reports} className="absolute inset-0 opacity-40 pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent pointer-events-none" />
         
         {/* Ilustrasi Modern Inspeksi Kerusakan Jalan */}
@@ -177,13 +191,18 @@ function RoadInfrastructureIllustration() {
         <text x="304" y="113" fill="#ffffff" fontSize="8" fontWeight="bold" fontFamily="sans-serif">CRACK 78%</text>
 
         {/* Radar GIS Circle */}
-        <circle cx="180" cy="210" r="54" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.7" strokeDasharray="5 3" />
+        <circle cx="180" cy="210" r="54" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.7" strokeDasharray="5 3">
+          <animate attributeName="r" values="50;58;50" dur="3s" repeatCount="indefinite" />
+          <animate attributeName="stroke-opacity" values="0.8;0.3;0.8" dur="3s" repeatCount="indefinite" />
+        </circle>
         <circle cx="180" cy="210" r="3.5" fill="#38bdf8" />
 
         {/* Top Floating Badge */}
         <g transform="translate(360, 20)">
           <rect width="110" height="30" rx="15" fill="#0f172a" />
-          <circle cx="16" cy="15" r="5" fill="#10b981" />
+          <circle cx="16" cy="15" r="5" fill="#10b981">
+            <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />
+          </circle>
           <text x="28" y="19" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="sans-serif">GPS Terkalibrasi</text>
         </g>
       </svg>
