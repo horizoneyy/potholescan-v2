@@ -11,9 +11,9 @@ const NAV: { id: Page; label: string; icon: typeof Map }[] = [
   { id: 'ringkasan', label: 'Ringkasan', icon: LayoutGrid },
   { id: 'peta', label: 'Peta lapangan', icon: Map },
   { id: 'laporan', label: 'Laporan', icon: ClipboardList },
-  { id: 'rekap', label: 'Rekap PDF', icon: FileText },
+  { id: 'rekap', label: 'Rekap', icon: FileText },
 ]
-const TITLE: Record<Page, string> = { ringkasan: 'Dashboard operasional', peta: 'Peta lapangan', laporan: 'Laporan masuk', rekap: 'Rekap resmi' }
+const TITLE: Record<Page, string> = { ringkasan: 'Dashboard operasional', peta: 'Peta lapangan', laporan: 'Laporan masuk', rekap: 'Rekap' }
 
 export function Staff({ user, reports, update, onLogout }: { user: User; reports: Report[]; update: (id: number, p: Partial<Report>, from: Status, hide: boolean) => void; onLogout: () => void }) {
   const [page, setPage] = useState<Page>('ringkasan')

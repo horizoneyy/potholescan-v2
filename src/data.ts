@@ -61,9 +61,9 @@ export interface Settings { min: number; publish: number; radius: number }
 export interface LogEntry { id: number; actor: string; action: string; target: string; details: string; at: string }
 
 export const initialUsers: User[] = [
-  { id: 1, username: 'admin', password: 'admin123', fullName: 'Ratna Wulandari', role: 'admin', active: true },
-  { id: 2, username: 'petugas01', password: 'petugas123', fullName: 'Budi Santoso', role: 'petugas', active: true },
-  { id: 3, username: 'petugas02', password: 'petugas123', fullName: 'Siti Rahmawati', role: 'petugas', active: true },
+  { id: 1, username: 'admin', password: 'admin123', fullName: 'Andi Daniel', role: 'admin', active: true },
+  { id: 2, username: 'daniel', password: 'petugas123', fullName: 'Daniel', role: 'petugas', active: true },
+  { id: 3, username: 'niyel', password: 'petugas123', fullName: 'Niyel', role: 'petugas', active: true },
 ]
 export const initialSettings: Settings = { min: 0.25, publish: 0.65, radius: 500 }
 export const initialLogs: LogEntry[] = [

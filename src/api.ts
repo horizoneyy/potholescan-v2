@@ -165,3 +165,23 @@ export async function updateSettingsApi(settings: { min?: number; publish?: numb
 export function getPdfDownloadUrl(fromDate: string, toDate: string, status: string = 'SEMUA'): string {
   return `${API_BASE}/reports/pdf?from_date=${fromDate}&to_date=${toDate}&status=${status}`
 }
+
+export function getExcelDownloadUrl(fromDate?: string, toDate?: string, status: string = 'SEMUA'): string {
+  const params = new URLSearchParams()
+  if (fromDate) params.append('from_date', fromDate)
+  if (toDate) params.append('to_date', toDate)
+  if (status) params.append('status', status)
+  return `${API_BASE}/reports/export/excel?${params.toString()}`
+}
+
+export async function fetchUsersApi() {
+  const res = await fetch(`${API_BASE}/auth/users`)
+  if (!res.ok) throw new Error('Gagal mengambil daftar pengguna.')
+  return res.json()
+}
+
+export async function deleteUserApi(userId: number) {
+  const res = await fetch(`${API_BASE}/auth/users/${userId}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('Gagal menghapus akun staf.')
+  return res.json()
+}

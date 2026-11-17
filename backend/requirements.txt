@@ -22,9 +22,10 @@ python-jose[cryptography]>=3.3.0
 passlib[argon2]>=1.7.4
 argon2-cffi>=23.1.0
 
-# Rate Limiting & PDF Generation
+# Rate Limiting, PDF & Excel Generation
 slowapi>=0.1.9
 reportlab>=4.2.0
+openpyxl>=3.1.5
 
 # Dataset Automation
 kagglehub>=0.2.5

@@ -20,15 +20,23 @@ LOCAL_USERS = {
         "id": 1,
         "username": "admin",
         "password_hash": get_password_hash("admin123"),
-        "full_name": "Ratna Wulandari",
+        "full_name": "Andi Daniel",
         "role": RoleEnum.ADMIN,
         "is_active": True
     },
-    "petugas01": {
+    "daniel": {
         "id": 2,
-        "username": "petugas01",
+        "username": "daniel",
         "password_hash": get_password_hash("petugas123"),
-        "full_name": "Budi Santoso",
+        "full_name": "Daniel",
+        "role": RoleEnum.PETUGAS,
+        "is_active": True
+    },
+    "niyel": {
+        "id": 3,
+        "username": "niyel",
+        "password_hash": get_password_hash("petugas123"),
+        "full_name": "Niyel",
         "role": RoleEnum.PETUGAS,
         "is_active": True
     }
@@ -93,6 +101,51 @@ async def get_me(current_user: dict = Depends(get_current_user_from_cookie)):
         "role": current_user.get("role"),
         "user_id": current_user.get("user_id")
     }
+
+@router.get("/users", dependencies=[Depends(require_role(["admin"]))])
+async def list_users():
+    """Mendapatkan daftar seluruh user untuk dashboard admin"""
+    if supabase_svc.is_configured():
+        users = supabase_svc.get_all_users()
+        if users:
+            return users
+    return [
+        {
+            "id": u["id"],
+            "username": u["username"],
+            "full_name": u["full_name"],
+            "role": u["role"],
+            "is_active": u["is_active"],
+            "created_at": "2026-11-16T20:00:00Z"
+        }
+        for u in LOCAL_USERS.values()
+    ]
+
+@router.delete("/users/{user_id}", dependencies=[Depends(require_role(["admin"]))])
+async def delete_user(user_id: int, current_user: dict = Depends(get_current_user_from_cookie)):
+    """Menghapus akun staf oleh administrator"""
+    deleted = False
+    if supabase_svc.is_configured():
+        deleted = supabase_svc.delete_user(user_id)
+    
+    # Juga hapus dari in-memory fallback
+    to_delete = None
+    for uname, u in LOCAL_USERS.items():
+        if u["id"] == user_id:
+            to_delete = uname
+            break
+    if to_delete:
+        del LOCAL_USERS[to_delete]
+        deleted = True
+
+    supabase_svc.log_audit(
+        actor=current_user.get("sub", "admin"),
+        action="DELETE_USER",
+        target_entity="users",
+        target_id=user_id,
+        details=f"Menghapus user ID #{user_id}"
+    )
+    return {"success": True, "message": f"User #{user_id} berhasil dihapus."}
 
 @router.post("/users", response_model=UserResponse, dependencies=[Depends(require_role(["admin"]))])
 async def create_user(payload: UserCreate, current_user: dict = Depends(get_current_user_from_cookie)):

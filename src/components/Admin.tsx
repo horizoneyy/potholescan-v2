@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, ClipboardList, FileText, LayoutGrid, LogOut, SlidersHorizontal, UserPlus, Users } from 'lucide-react'
+import { Activity, ClipboardList, FileText, LayoutGrid, LogOut, SlidersHorizontal, Trash2, UserPlus, Users } from 'lucide-react'
 import { Card, Logo, SeverityBadge } from './ui'
 import { MapView } from './MapView'
 import { EditModal, RekapPage, ReportTable } from './shared'
@@ -12,20 +12,21 @@ const NAV: { id: Page; label: string; icon: typeof Users }[] = [
   { id: 'akun', label: 'Akun staf', icon: Users },
   { id: 'pengaturan', label: 'Ambang AI', icon: SlidersHorizontal },
   { id: 'audit', label: 'Audit log', icon: Activity },
-  { id: 'rekap', label: 'Rekap PDF', icon: FileText },
+  { id: 'rekap', label: 'Rekap', icon: FileText },
 ]
-const TITLE: Record<Page, string> = { ringkasan: 'Pusat kendali', laporan: 'Semua laporan', akun: 'Kelola akun staf', pengaturan: 'Ambang keyakinan', audit: 'Rekaman audit', rekap: 'Rekap resmi' }
+const TITLE: Record<Page, string> = { ringkasan: 'Pusat kendali', laporan: 'Semua laporan', akun: 'Kelola akun staf', pengaturan: 'Ambang keyakinan', audit: 'Rekaman audit', rekap: 'Rekap' }
 
 interface Props {
   user: User; users: User[]; reports: Report[]; settings: Settings; logs: LogEntry[]
   update: (id: number, p: Partial<Report>, from: Status, hide: boolean) => void
   addUser: (u: { username: string; password: string; fullName: string; role: Role }) => string | null
   toggleUser: (id: number) => void
+  deleteUser?: (id: number) => void
   saveSettings: (s: Settings) => void
   onLogout: () => void
 }
 
-export function Admin({ user, users, reports, settings, logs, update, addUser, toggleUser, saveSettings, onLogout }: Props) {
+export function Admin({ user, users, reports, settings, logs, update, addUser, toggleUser, deleteUser, saveSettings, onLogout }: Props) {
   const [page, setPage] = useState<Page>('ringkasan')
   const [edit, setEdit] = useState<Report | null>(null)
   const visible = reports.filter((r) => !r.hidden)
@@ -102,8 +103,8 @@ export function Admin({ user, users, reports, settings, logs, update, addUser, t
             </div>
           )}
 
-          {page === 'laporan' && <Card className="overflow-hidden"><ReportTable rows={reports.filter((r) => !r.hidden)} onOpen={setEdit} /></Card>}
-          {page === 'akun' && <Accounts users={users} addUser={addUser} toggleUser={toggleUser} me={user.id} />}
+          {page === 'laporan' && <Card className="overflow-hidden"><ReportTable rows={reports.filter((r) => !r.hidden)} readOnly={true} /></Card>}
+          {page === 'akun' && <Accounts users={users} addUser={addUser} toggleUser={toggleUser} deleteUser={deleteUser} me={user.id} />}
           {page === 'pengaturan' && <Thresholds settings={settings} save={saveSettings} />}
           {page === 'audit' && (
             <Card className="overflow-hidden">
@@ -125,7 +126,19 @@ function Big({ n, l }: { n: number | string; l: string }) {
   return <div><div className="font-display text-6xl font-extrabold leading-none sm:text-7xl">{n}</div><div className="mt-3 text-xs font-medium uppercase tracking-widest text-slate-400">{l}</div></div>
 }
 
-function Accounts({ users, addUser, toggleUser, me }: { users: User[]; addUser: Props['addUser']; toggleUser: (id: number) => void; me: number }) {
+function Accounts({
+  users,
+  addUser,
+  toggleUser,
+  deleteUser,
+  me,
+}: {
+  users: User[]
+  addUser: Props['addUser']
+  toggleUser: (id: number) => void
+  deleteUser?: (id: number) => void
+  me: number
+}) {
   const [f, setF] = useState({ fullName: '', username: '', password: '', role: 'petugas' as Role })
   const [err, setErr] = useState('')
   const inp = 'mt-1.5 w-full rounded-xl border border-line bg-soft px-3 py-2.5 text-sm'
@@ -133,13 +146,37 @@ function Accounts({ users, addUser, toggleUser, me }: { users: User[]; addUser: 
     <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
       <Card className="overflow-hidden">
         <table className="w-full min-w-[520px] text-left text-sm">
-          <thead className="text-[11px] uppercase tracking-widest text-slate-400"><tr><th className="px-5 py-3">Pengguna</th><th>Peran</th><th>Status</th><th className="pr-5" /></tr></thead>
+          <thead className="text-[11px] uppercase tracking-widest text-slate-400"><tr><th className="px-5 py-3">Pengguna</th><th>Peran</th><th>Status</th><th className="pr-5 text-right">Aksi</th></tr></thead>
           <tbody>{users.map((u) => (
             <tr key={u.id} className="border-t border-line">
               <td className="px-5 py-3"><div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-full bg-soft font-display font-bold">{u.fullName[0]}</div><div><div className="font-semibold">{u.fullName}</div><div className="text-xs text-slate-500">@{u.username}</div></div></div></td>
               <td><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${u.role === 'admin' ? 'bg-ink text-white' : 'bg-soft'}`}>{u.role}</span></td>
               <td className={u.active ? 'text-emerald-600' : 'text-slate-400'}>{u.active ? 'Aktif' : 'Nonaktif'}</td>
-              <td className="pr-5 text-right">{u.id !== me && <button onClick={() => toggleUser(u.id)} className="rounded-full border border-line px-4 py-1.5 text-xs font-semibold hover:bg-soft">{u.active ? 'Nonaktifkan' : 'Aktifkan'}</button>}</td>
+              <td className="pr-5 text-right">
+                {u.id !== me && (
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => toggleUser(u.id)}
+                      className="rounded-full border border-line px-3.5 py-1.5 text-xs font-semibold hover:bg-soft"
+                    >
+                      {u.active ? 'Nonaktifkan' : 'Aktifkan'}
+                    </button>
+                    {deleteUser && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Hapus staf ${u.fullName}?`)) {
+                            deleteUser(u.id)
+                          }
+                        }}
+                        title="Hapus akun staf"
+                        className="grid size-8 place-items-center rounded-full border border-red-200 text-red-500 transition hover:bg-red-50"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </td>
             </tr>))}
           </tbody>
         </table>
@@ -171,11 +208,31 @@ function Thresholds({ settings, save }: { settings: Settings; save: (s: Settings
   )
   return (
     <Card className="max-w-3xl p-8">
+      <div className="mb-6 rounded-2xl border border-sky-200 bg-sky-50/70 p-4 text-xs text-sky-800">
+        Ambang batas di bawah ini terhubung langsung ke inferensi AI YOLOv8 (<code>conf_min</code>). Nilai kalibrasi bawaan berasal dari metrik hasil latih bobot model <code>best.pt</code> (F1-Score optimal 0.25).
+      </div>
       <Row label="Ambang minimal deteksi" desc="Deteksi di bawah angka ini diabaikan sebagai jalan normal." k="min" min={0.1} max={0.6} step={0.01} fmt={(v) => v.toFixed(2)} />
       <Row label="Ambang publikasi otomatis" desc="Di atas angka ini laporan langsung tampil di peta publik." k="publish" min={0.3} max={0.95} step={0.01} fmt={(v) => v.toFixed(2)} />
       <Row label="Radius peringatan" desc="Jarak pencarian lubang aktif di sekitar pengendara." k="radius" min={100} max={2000} step={50} fmt={(v) => `${v} m`} />
       {bad && <p className="mt-4 text-sm text-red-600">Ambang minimal harus lebih kecil dari ambang publikasi.</p>}
-      <div className="mt-6 flex items-center gap-4"><button disabled={bad} onClick={() => { save(s); setOk(true) }} className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">Simpan pengaturan</button>{ok && <span className="text-sm text-emerald-600">Tersimpan dan dicatat di audit log.</span>}</div>
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <button disabled={bad} onClick={() => { save(s); setOk(true) }} className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
+          Simpan pengaturan
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const calibrated = { min: 0.25, publish: 0.65, radius: 500 }
+            setS(calibrated)
+            save(calibrated)
+            setOk(true)
+          }}
+          className="rounded-full border border-line bg-white px-5 py-3 text-sm font-semibold hover:bg-soft"
+        >
+          Reset ke Standar Model Latihan (best.pt)
+        </button>
+        {ok && <span className="text-sm font-medium text-emerald-600">Tersimpan ke sistem dan audit log.</span>}
+      </div>
     </Card>
   )
 }

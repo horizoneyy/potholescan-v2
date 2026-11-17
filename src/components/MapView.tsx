@@ -11,6 +11,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
+export const DEFAULT_ROAD_IMG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="%23f1f5f9" stroke="%2394a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="4" fill="%23f1f5f9"/><path d="M12 2v20" stroke="%23cbd5e1" stroke-dasharray="2 2"/><path d="M4 19l4-4 3 3 5-5 4 4" stroke="%23e5484d" stroke-width="2"/><circle cx="16" cy="13" r="2" fill="%23e5484d"/></svg>'
+
 function createCustomMarkerIcon(color: string, isBerat: boolean, isSelesai: boolean) {
   const pulseHtml = isBerat && !isSelesai
     ? `<span style="position: absolute; inset: -4px; border-radius: 9999px; background: ${color}; animation: pulse-ring 2s ease-out infinite; opacity: 0.75;"></span>`
@@ -31,17 +33,6 @@ function createCustomMarkerIcon(color: string, isBerat: boolean, isSelesai: bool
   })
 }
 
-function MapClickHandler({ onLocationSelect }: { onLocationSelect?: (lat: number, lon: number) => void }) {
-  useMapEvents({
-    click(e) {
-      if (onLocationSelect) {
-        onLocationSelect(e.latlng.lat, e.latlng.lng)
-      }
-    },
-  })
-  return null
-}
-
 function MapRecenter({ center }: { center: [number, number] }) {
   const map = useMap()
   useEffect(() => {
@@ -55,7 +46,6 @@ interface MapViewProps {
   className?: string
   userCoords?: { lat: number; lon: number }
   userPin?: { x: number; y: number }
-  onSelectCoords?: (lat: number, lon: number) => void
   radiusMeters?: number
 }
 
@@ -63,7 +53,6 @@ export function MapView({
   reports,
   className = '',
   userCoords,
-  onSelectCoords,
   radiusMeters = 500,
 }: MapViewProps) {
   const defaultCenter: [number, number] = userCoords
@@ -87,7 +76,6 @@ export function MapView({
         />
 
         <MapRecenter center={defaultCenter} />
-        {onSelectCoords && <MapClickHandler onLocationSelect={onSelectCoords} />}
 
         {/* User Location & 500m Proximity Circle */}
         {userCoords && (
@@ -140,8 +128,11 @@ export function MapView({
                 <div className="min-w-[180px] p-1 font-sans text-xs">
                   <div className="overflow-hidden rounded-xl bg-slate-100">
                     <img
-                      src={r.annotated_img || r.img}
+                      src={r.annotated_img || r.img || DEFAULT_ROAD_IMG}
                       alt={r.street}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+                      }}
                       className="h-28 w-full object-cover"
                     />
                   </div>

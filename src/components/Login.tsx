@@ -57,11 +57,6 @@ export function Login({
     }
   }
 
-  const demo = [
-    ['Admin Dinas', 'admin', 'admin123'],
-    ['Petugas Lapangan', 'petugas01', 'petugas123'],
-  ]
-
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col p-8 sm:p-12">
@@ -109,38 +104,89 @@ export function Login({
           >
             {loading ? 'Memverifikasi…' : 'Masuk'}
           </button>
-          <div className="mt-6 rounded-2xl border border-line bg-white p-4 text-sm">
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-              Akun demo resmi (klik untuk mengisi)
-            </div>
-            {demo.map(([r, a, b]) => (
-              <button
-                type="button"
-                key={a}
-                onClick={() => {
-                  setU(a)
-                  setP(b)
-                  setErr('')
-                }}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left hover:bg-soft"
-              >
-                <span className="font-medium">{r}</span>
-                <span className="font-mono text-xs text-slate-500">{a} / {b}</span>
-              </button>
-            ))}
-          </div>
         </form>
       </div>
-      <div className="relative hidden lg:block">
-        <MapView reports={reports} className="absolute inset-0" />
-        <div className="absolute inset-0 bg-gradient-to-r from-bg via-transparent to-transparent pointer-events-none" />
-        <div className="absolute bottom-10 left-10 right-10 rounded-3xl border border-white/70 bg-white/75 p-6 backdrop-blur-xl pointer-events-none">
-          <div className="font-display text-3xl font-extrabold">Verifikasi, tangani, rekap.</div>
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-slate-50 p-10 lg:flex">
+        <MapView reports={reports} className="absolute inset-0 opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent pointer-events-none" />
+        
+        {/* Ilustrasi Modern Inspeksi Kerusakan Jalan */}
+        <div className="relative z-10 m-auto w-full max-w-lg">
+          <RoadInfrastructureIllustration />
+        </div>
+
+        <div className="relative z-10 rounded-3xl border border-white/60 bg-white/85 p-6 backdrop-blur-xl shadow-xl">
+          <div className="font-display text-3xl font-extrabold text-slate-900">Verifikasi, tangani, rekap.</div>
           <p className="mt-1 text-slate-600">
             Satu platform terintegrasi untuk seluruh siklus perbaikan jalan daerah.
           </p>
         </div>
       </div>
+    </div>
+  )
+}
+
+function RoadInfrastructureIllustration() {
+  return (
+    <div className="relative mx-auto flex w-full items-center justify-center">
+      <svg
+        viewBox="0 0 500 300"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full rounded-3xl border border-white/70 bg-white/80 p-4 shadow-2xl backdrop-blur-md"
+      >
+        <defs>
+          <linearGradient id="roadGrad" x1="250" y1="40" x2="250" y2="280" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#334155" />
+            <stop offset="1" stopColor="#0f172a" />
+          </linearGradient>
+          <radialGradient id="pulseRed" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#e5484d" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#e5484d" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* Grid lines */}
+        <line x1="30" y1="70" x2="470" y2="70" stroke="#cbd5e1" strokeDasharray="4 4" />
+        <line x1="30" y1="150" x2="470" y2="150" stroke="#cbd5e1" strokeDasharray="4 4" />
+        <line x1="30" y1="230" x2="470" y2="230" stroke="#cbd5e1" strokeDasharray="4 4" />
+
+        {/* Road Polygon */}
+        <polygon points="190,40 310,40 430,280 70,280" fill="url(#roadGrad)" />
+
+        {/* Road Markings */}
+        <line x1="250" y1="45" x2="250" y2="85" stroke="#f59e0b" strokeWidth="4" />
+        <line x1="250" y1="115" x2="250" y2="165" stroke="#f59e0b" strokeWidth="5" />
+        <line x1="250" y1="195" x2="250" y2="260" stroke="#f59e0b" strokeWidth="6" />
+
+        {/* Road Curbs */}
+        <line x1="190" y1="40" x2="70" y2="280" stroke="#94a3b8" strokeWidth="3" />
+        <line x1="310" y1="40" x2="430" y2="280" stroke="#94a3b8" strokeWidth="3" />
+
+        {/* Detected Pothole 1 (Heavy - Red) */}
+        <ellipse cx="180" cy="210" rx="36" ry="18" fill="url(#pulseRed)" />
+        <ellipse cx="180" cy="210" rx="24" ry="12" fill="#020617" />
+        <rect x="145" y="185" width="70" height="48" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" strokeDasharray="3 3" />
+        <rect x="145" y="168" width="80" height="18" rx="4" fill="#e5484d" />
+        <text x="149" y="181" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="sans-serif">POTHOLE 92%</text>
+
+        {/* Detected Crack 2 (Medium - Yellow) */}
+        <ellipse cx="320" cy="130" rx="14" ry="7" fill="#020617" />
+        <rect x="300" y="115" width="40" height="28" rx="4" fill="none" stroke="#f5a524" strokeWidth="2" />
+        <rect x="300" y="103" width="65" height="14" rx="3" fill="#f5a524" />
+        <text x="304" y="113" fill="#ffffff" fontSize="8" fontWeight="bold" fontFamily="sans-serif">CRACK 78%</text>
+
+        {/* Radar GIS Circle */}
+        <circle cx="180" cy="210" r="54" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.7" strokeDasharray="5 3" />
+        <circle cx="180" cy="210" r="3.5" fill="#38bdf8" />
+
+        {/* Top Floating Badge */}
+        <g transform="translate(360, 20)">
+          <rect width="110" height="30" rx="15" fill="#0f172a" />
+          <circle cx="16" cy="15" r="5" fill="#10b981" />
+          <text x="28" y="19" fill="#ffffff" fontSize="10" fontWeight="bold" fontFamily="sans-serif">GPS Terkalibrasi</text>
+        </g>
+      </svg>
     </div>
   )
 }

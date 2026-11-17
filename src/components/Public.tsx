@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { CameraCapture } from './Camera'
-import { AlertTriangle, Camera, MapPin, ScanLine, ShieldCheck, Sparkles, CheckCircle2, Clock, RotateCcw, Upload } from 'lucide-react'
+import { AlertTriangle, Camera, MapPin, ScanLine, CheckCircle2, Clock, RotateCcw } from 'lucide-react'
 import { Card, Logo, SeverityBadge } from './ui'
 import { MapView } from './MapView'
 import { SEV_COLOR, todayIso, type Report, type Settings, type Severity } from '../data'
@@ -33,17 +33,17 @@ export function Public({
   const [phase, setPhase] = useState<'idle' | 'scanning' | 'done'>('idle')
   const [res, setRes] = useState<Result | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [gpsActive, setGpsActive] = useState<boolean>(false)
+  const [gpsLoading, setGpsLoading] = useState<boolean>(true)
 
-  // Real GPS Coordinates (Default: Jakarta Selatan)
+  // Real GPS Coordinates (Default fallback: Jakarta Selatan)
   const [userCoords, setUserCoords] = useState<{ lat: number; lon: number }>({
     lat: -6.2088,
     lon: 106.8456,
   })
-  const [coordsLabel, setCoordsLabel] = useState('-6.2088, 106.8456')
-  const [srcLabel, setSrcLabel] = useState('GPS otomatis (Peramban / Foto)')
+  const [coordsLabel, setCoordsLabel] = useState('Mencari sinyal GPS…')
+  const [srcLabel, setSrcLabel] = useState('Menunggu GPS aktif')
   const [nearbyCount, setNearbyCount] = useState<number>(0)
-
-  const galleryInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch real nearby warnings whenever coords change
   useEffect(() => {
@@ -58,23 +58,38 @@ export function Public({
       })
   }, [userCoords, settings.radius, reports])
 
-  // Get browser GPS on mount
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (p) => {
-          const lat = parseFloat(p.coords.latitude.toFixed(5))
-          const lon = parseFloat(p.coords.longitude.toFixed(5))
-          setUserCoords({ lat, lon })
-          setCoordsLabel(`${lat}, ${lon}`)
-          setSrcLabel('GPS peramban (Akurat)')
-        },
-        () => {
-          setSrcLabel('Lokasi default (Jakarta Selatan)')
-        },
-        { timeout: 5000 }
-      )
+  // Get browser GPS with high accuracy
+  function requestGps() {
+    if (!navigator.geolocation) {
+      setGpsLoading(false)
+      setGpsActive(false)
+      setSrcLabel('Peramban tidak mendukung geolokasi GPS')
+      setCoordsLabel('Tidak tersedia')
+      return
     }
+    setGpsLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        const lat = parseFloat(p.coords.latitude.toFixed(5))
+        const lon = parseFloat(p.coords.longitude.toFixed(5))
+        setUserCoords({ lat, lon })
+        setCoordsLabel(`${lat}, ${lon}`)
+        setSrcLabel('GPS perangkat aktif (Akurat)')
+        setGpsActive(true)
+        setGpsLoading(false)
+      },
+      () => {
+        setGpsActive(false)
+        setGpsLoading(false)
+        setSrcLabel('Izin lokasi belum diberikan')
+        setCoordsLabel('GPS tidak aktif')
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    )
+  }
+
+  useEffect(() => {
+    requestGps()
   }, [])
 
   useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl) }, [fileUrl])
@@ -91,17 +106,6 @@ export function Public({
       .then((r) => r.blob())
       .then((b) => setFileBlob(b))
       .catch(() => {})
-  }
-
-  function handleGallerySelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]
-    if (f) {
-      setFileBlob(f)
-      setFileUrl(URL.createObjectURL(f))
-      setRes(null)
-      setErrorMsg(null)
-      setPhase('idle')
-    }
   }
 
   async function analyze() {
@@ -244,24 +248,14 @@ export function Public({
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
-          <div className="relative overflow-hidden rounded-[2rem] border border-line bg-surface shadow-[0_24px_60px_-30px_rgba(15,23,42,0.25)]">
-            <MapView
-              reports={reports}
-              userCoords={userCoords}
-              radiusMeters={settings.radius}
-              onSelectCoords={(lat, lon) => {
-                setUserCoords({ lat, lon })
-                setCoordsLabel(`${lat.toFixed(5)}, ${lon.toFixed(5)}`)
-                setSrcLabel('Pin manual di peta')
-              }}
-              className="h-[460px] lg:h-full lg:min-h-[640px]"
-            />
-            <div className="pointer-events-none absolute left-4 right-4 top-4 flex flex-wrap items-start justify-between gap-3 z-10">
-              <div className="pointer-events-auto rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-lg backdrop-blur-xl">
-                <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Peta Spasial GIS</div>
-                <div className="font-display text-lg font-bold">OpenStreetMap Terintegrasi</div>
+          <div className="flex flex-col overflow-hidden rounded-[2rem] border border-line bg-surface shadow-[0_24px_60px_-30px_rgba(15,23,42,0.25)]">
+            {/* Header peta di luar area viewport peta agar tidak menutupi peta */}
+            <div className="flex flex-wrap items-center justify-between border-b border-line bg-white px-5 py-3.5">
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Peta Spasial GIS</div>
+                <div className="font-display text-base font-bold text-slate-900">OpenStreetMap Terintegrasi</div>
               </div>
-              <div className="pointer-events-auto flex gap-3 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-xs font-medium shadow-lg backdrop-blur-xl">
+              <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
                 {(['BERAT', 'SEDANG', 'RINGAN'] as Severity[]).map((s) => (
                   <span key={s} className="flex items-center gap-1.5">
                     <span className="size-2 rounded-full" style={{ background: SEV_COLOR[s] }} />
@@ -270,16 +264,28 @@ export function Public({
                 ))}
               </div>
             </div>
-            <div className="pointer-events-none absolute inset-x-4 bottom-4 flex items-center gap-4 rounded-2xl border border-white/70 bg-white/85 p-4 shadow-xl backdrop-blur-xl z-10">
-              <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-ink text-white">
-                <AlertTriangle className="size-5" />
+
+            {/* Area Peta Bebas Halangan (Pin Terkunci pada GPS) */}
+            <div className="relative min-h-[440px] flex-1 lg:min-h-[580px]">
+              <MapView
+                reports={reports}
+                userCoords={userCoords}
+                radiusMeters={settings.radius}
+                className="size-full"
+              />
+            </div>
+
+            {/* Bar informasi radius waspada di bawah peta */}
+            <div className="flex items-center gap-3.5 border-t border-line bg-white px-5 py-3.5">
+              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-ink text-white">
+                <AlertTriangle className="size-4" />
               </div>
               <div className="min-w-0">
-                <div className="font-display text-lg font-bold leading-tight">
-                  {nearbyCount} lubang aktif di sekitar Anda
+                <div className="font-display text-base font-bold leading-tight text-slate-900">
+                  {nearbyCount} lubang di sekitar Anda
                 </div>
-                <div className="truncate text-sm text-slate-500">
-                  Radius {settings.radius}m dari posisi Anda · Klik peta untuk ubah titik
+                <div className="truncate text-xs text-slate-500">
+                  Radius {settings.radius}m dari posisi GPS Anda
                 </div>
               </div>
             </div>
@@ -287,10 +293,7 @@ export function Public({
 
           <Card className="flex flex-col overflow-hidden">
             <div className="p-6 pb-0">
-              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-                <Sparkles className="size-3.5" /> Analisis AI (FastAPI + YOLOv8)
-              </div>
-              <h2 className="mt-1 text-3xl font-extrabold">Laporkan kerusakan</h2>
+              <h2 className="text-3xl font-extrabold text-slate-900">Laporkan kerusakan</h2>
             </div>
 
             <div className="flex flex-1 flex-col gap-4 p-6">
@@ -303,31 +306,32 @@ export function Public({
                       <div className="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-white shadow-sm">
                         <ScanLine className="size-6" />
                       </div>
-                      <p className="font-medium">Foto langsung atau dari galeri</p>
-                      <p className="mt-1 text-sm text-slate-500">AI otomatis mengekstrak GPS & mendeteksi lubang</p>
+                      <p className="font-medium">Foto langsung dari kamera jalan</p>
+                      <p className="mt-1 text-sm text-slate-500">Kamera memerlukan koordinat GPS aktif untuk memindai</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
                     <button
+                      disabled={!gpsActive}
                       onClick={() => setCam(true)}
-                      className="flex items-center justify-center gap-2 rounded-2xl bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
                     >
-                      <Camera className="size-4" /> Buka kamera
+                      <Camera className="size-4" />
+                      {gpsLoading ? 'Mendeteksi sinyal GPS…' : gpsActive ? 'Buka kamera' : 'Menunggu koordinat GPS aktif…'}
                     </button>
-                    <button
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-white py-3.5 text-sm font-semibold hover:bg-soft"
-                    >
-                      <Upload className="size-4" /> Pilih foto
-                    </button>
+                    {!gpsActive && !gpsLoading && (
+                      <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                        <span>GPS belum terdeteksi. Harap izinkan akses lokasi pada browser.</span>
+                        <button
+                          type="button"
+                          onClick={requestGps}
+                          className="shrink-0 font-bold underline hover:text-amber-950"
+                        >
+                          Coba lagi
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <input
-                    ref={galleryInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    hidden
-                    onChange={handleGallerySelect}
-                  />
                 </>
               ) : (
                 <>
@@ -430,10 +434,6 @@ export function Public({
                   )}
                 </>
               )}
-            </div>
-            <div className="flex items-center gap-2 border-t border-line bg-soft/60 px-6 py-3 text-xs text-slate-500">
-              <ShieldCheck className="size-3.5" />
-              Foto diproses secara aman via FastAPI & Supabase Storage.
             </div>
           </Card>
         </section>

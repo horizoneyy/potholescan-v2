@@ -251,6 +251,18 @@ class SupabaseService:
             return res.data[0]
         return None
 
+    def get_all_users(self) -> List[Dict[str, Any]]:
+        if not self.client:
+            return []
+        res = self.client.table("users").select("id, username, full_name, role, is_active, created_at").order("id").execute()
+        return res.data or []
+
+    def delete_user(self, user_id: int) -> bool:
+        if not self.client:
+            return False
+        res = self.client.table("users").delete().eq("id", user_id).execute()
+        return len(res.data) > 0 if res.data else True
+
     def log_audit(self, actor: str, action: str, target_entity: str, target_id: Optional[int], details: str):
         if not self.client:
             return

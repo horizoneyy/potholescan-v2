@@ -16,7 +16,7 @@ import { Public } from './components/Public'
 import { Staff } from './components/Staff'
 import { Admin } from './components/Admin'
 import { Login } from './components/Login'
-import { fetchReports, fetchSettingsApi, logoutApi, updateSettingsApi } from './api'
+import { fetchReports, fetchSettingsApi, fetchUsersApi, deleteUserApi, logoutApi, updateSettingsApi } from './api'
 
 export default function App() {
   const [view, setView] = useState<'public' | 'login'>('public')
@@ -48,15 +48,28 @@ export default function App() {
             img: it.image_url,
             annotated_img: it.annotated_image_url,
           }))
-          // Gabungkan atau utamakan data backend
-          setReports((prev) => {
-            const existingIds = new Set(apiMapped.map((r) => r.id))
-            const remaining = prev.filter((r) => !existingIds.has(r.id))
-            return [...apiMapped, ...remaining]
-          })
+          // Gunakan data riil dari Supabase
+          setReports(apiMapped)
         }
       })
       .catch((e) => console.log('Menggunakan data offline/seed:', e))
+
+    fetchUsersApi()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setUsers(
+            data.map((u: any) => ({
+              id: u.id,
+              username: u.username,
+              password: '',
+              fullName: u.full_name,
+              role: u.role,
+              active: u.is_active ?? true,
+            }))
+          )
+        }
+      })
+      .catch(() => {})
 
     fetchSettingsApi()
       .then((s) => {
@@ -112,6 +125,18 @@ export default function App() {
     log(session!.username, 'TOGGLE_USER', 'users', `${t.username} ${t.active ? 'dinonaktifkan' : 'diaktifkan'}`)
   }
 
+  const handleDeleteUser = async (id: number) => {
+    try {
+      await deleteUserApi(id)
+    } catch (e) {
+      console.warn('Gagal menghapus user di server, hapus secara lokal:', e)
+    }
+    setUsers((p) => p.filter((x) => x.id !== id))
+    if (session) {
+      log(session.username, 'DELETE_USER', 'users', `Akun staf ID #${id} dihapus`)
+    }
+  }
+
   const saveSettings = (s: Settings) => {
     setSettings(s)
     updateSettingsApi(s).catch(() => {})
@@ -140,6 +165,7 @@ export default function App() {
         update={update}
         addUser={addUser}
         toggleUser={toggleUser}
+        deleteUser={handleDeleteUser}
         saveSettings={saveSettings}
         onLogout={logout}
       />

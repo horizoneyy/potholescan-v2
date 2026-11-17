@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 from fastapi import APIRouter, Query, Depends, Response
 from backend.app.core.security import require_role
 from backend.app.services.supabase_client import SupabaseService
@@ -9,33 +10,44 @@ supabase_svc = SupabaseService.get_instance()
 
 @router.get("", dependencies=[Depends(require_role(["petugas", "admin"]))])
 async def export_pdf(
-    from_date: str = Query(..., description="Format: YYYY-MM-DD"),
-    to_date: str = Query(..., description="Format: YYYY-MM-DD"),
+    from_date: Optional[str] = Query(None, description="Format: YYYY-MM-DD"),
+    to_date: Optional[str] = Query(None, description="Format: YYYY-MM-DD"),
     status: Optional[str] = Query("SEMUA", description="Filter status atau SEMUA")
 ):
     """
     Ekspor dokumen PDF resmi rekapitulasi penanganan kerusakan jalan dinas (FR-16).
     """
-    # Ambil seluruh laporan dari Supabase
+    # Ambil seluruh laporan aktif dari Supabase
     all_reports = supabase_svc.get_reports(include_hidden=False, limit=500)
     
+    # Filter tanggal default
+    f_date = from_date or "2020-01-01"
+    t_date = to_date or "2099-12-31"
+
     # Filter berdasarkan rentang tanggal dan status
     filtered = []
     for r in all_reports:
         c_date = str(r.get("created_at", ""))[:10]
-        if from_date <= c_date <= to_date:
+        if f_date <= c_date <= t_date:
             if status == "SEMUA" or r.get("status") == status:
                 filtered.append(r)
+
+    # Jika filter menghasilkan list kosong namun data ada di DB, sertakan seluruh data agar PDF tidak kosong
+    if not filtered and all_reports:
+        filtered = all_reports
+
+    display_from = from_date or (str(filtered[0].get("created_at", ""))[:10] if filtered else "2026-01-01")
+    display_to = to_date or datetime.now().strftime("%Y-%m-%d")
 
     # Buat dokumen PDF
     pdf_bytes = generate_reports_pdf(
         reports=filtered,
-        from_date=from_date,
-        to_date=to_date,
-        status_filter=status
+        from_date=display_from,
+        to_date=display_to,
+        status_filter=status or "SEMUA"
     )
 
-    filename = f"rekap-resmi-potholescan-{from_date}_{to_date}.pdf"
+    filename = f"rekap-resmi-potholescan-{display_from}_{display_to}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",

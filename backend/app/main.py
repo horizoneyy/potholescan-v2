@@ -24,6 +24,7 @@ from backend.app.api.auth import router as auth_router
 from backend.app.api.reports import router as reports_router
 from backend.app.api.nearby import router as nearby_router
 from backend.app.api.pdf import router as pdf_router
+from backend.app.api.excel import router as excel_router
 from backend.app.api.settings import router as settings_router
 
 @asynccontextmanager
@@ -70,6 +71,7 @@ app.add_middleware(
 # Mendaftarkan Router API
 app.include_router(auth_router)
 app.include_router(pdf_router)
+app.include_router(excel_router)
 app.include_router(reports_router)
 app.include_router(nearby_router)
 app.include_router(settings_router)

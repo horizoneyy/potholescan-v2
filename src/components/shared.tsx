@@ -2,11 +2,20 @@ import { useMemo, useState } from 'react'
 import { Download, EyeOff, FileText, Printer, X } from 'lucide-react'
 import { Card, SeverityBadge, StatusBadge } from './ui'
 import { STATUS_LABEL, todayIso, type Report, type Status } from '../data'
-import { getPdfDownloadUrl, updateReportStatusApi } from '../api'
+import { getPdfDownloadUrl, getExcelDownloadUrl, updateReportStatusApi } from '../api'
+import { DEFAULT_ROAD_IMG } from './MapView'
 
 const STATUSES: Status[] = ['BARU', 'DIVERIFIKASI', 'DALAM_PENANGANAN', 'SELESAI']
 
-export function ReportTable({ rows, onOpen }: { rows: Report[]; onOpen: (r: Report) => void }) {
+export function ReportTable({
+  rows,
+  onOpen,
+  readOnly = false,
+}: {
+  rows: Report[]
+  onOpen?: (r: Report) => void
+  readOnly?: boolean
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
@@ -16,13 +25,13 @@ export function ReportTable({ rows, onOpen }: { rows: Report[]; onOpen: (r: Repo
             <th className="px-3 font-semibold">Keparahan</th>
             <th className="px-3 font-semibold">Keyakinan</th>
             <th className="px-3 font-semibold">Status</th>
-            <th className="px-5" />
+            {!readOnly && <th className="px-5" />}
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-5 py-14 text-center text-slate-500">
+              <td colSpan={readOnly ? 4 : 5} className="px-5 py-14 text-center text-slate-500">
                 Tidak ada laporan di daftar ini.
               </td>
             </tr>
@@ -32,8 +41,11 @@ export function ReportTable({ rows, onOpen }: { rows: Report[]; onOpen: (r: Repo
               <td className="px-5 py-3">
                 <div className="flex items-center gap-3">
                   <img
-                    src={r.annotated_img || r.img}
+                    src={r.annotated_img || r.img || DEFAULT_ROAD_IMG}
                     alt=""
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+                    }}
                     className="size-12 rounded-xl bg-soft object-cover"
                   />
                   <div>
@@ -51,14 +63,16 @@ export function ReportTable({ rows, onOpen }: { rows: Report[]; onOpen: (r: Repo
               <td className="px-3">
                 <StatusBadge s={r.status} />
               </td>
-              <td className="px-5 text-right">
-                <button
-                  onClick={() => onOpen(r)}
-                  className="rounded-full border border-line px-4 py-1.5 text-xs font-semibold hover:bg-ink hover:text-white"
-                >
-                  {r.status === 'SELESAI' ? 'Info' : 'Ubah'}
-                </button>
-              </td>
+              {!readOnly && onOpen && (
+                <td className="px-5 text-right">
+                  <button
+                    onClick={() => onOpen(r)}
+                    className="rounded-full border border-line px-4 py-1.5 text-xs font-semibold hover:bg-ink hover:text-white"
+                  >
+                    {r.status === 'SELESAI' ? 'Info' : 'Ubah'}
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -122,8 +136,11 @@ export function EditModal({
           </button>
         </div>
         <img
-          src={report.annotated_img || report.img}
+          src={report.annotated_img || report.img || DEFAULT_ROAD_IMG}
           alt=""
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+          }}
           className="mt-4 h-44 w-full rounded-2xl bg-soft object-cover"
         />
         <label className="mt-4 block text-sm font-medium">
@@ -204,15 +221,9 @@ export function RekapPage({ reports }: { reports: Report[] }) {
     [reports, from, to, st]
   )
 
-  function csv() {
-    const head = 'ID,Jalan,Keparahan,Status,Keyakinan,Tanggal\n'
-    const body = rows
-      .map((r) => `${r.id},"${r.street}",${r.severity},${r.status},${r.confidence},${r.iso}`)
-      .join('\n')
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([head + body], { type: 'text/csv' }))
-    a.download = `rekap-potholescan-${from}_${to}.csv`
-    a.click()
+  function downloadExcel() {
+    const url = getExcelDownloadUrl(from, to, st)
+    window.open(url, '_blank')
   }
 
   function downloadOfficialPdf() {
@@ -260,16 +271,16 @@ export function RekapPage({ reports }: { reports: Report[] }) {
         </label>
         <div className="ml-auto flex flex-wrap gap-2">
           <button
-            onClick={csv}
-            className="flex items-center gap-2 rounded-full border border-line bg-white px-5 py-2.5 text-sm font-semibold hover:bg-soft"
+            onClick={downloadExcel}
+            className="flex items-center gap-2 rounded-full border border-emerald-600 bg-emerald-50 px-5 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
           >
-            <Download className="size-4" /> CSV
+            <Download className="size-4" /> Unduh Excel (.xlsx)
           </button>
           <button
             onClick={downloadOfficialPdf}
             className="flex items-center gap-2 rounded-full border border-ink bg-white px-5 py-2.5 text-sm font-semibold text-ink hover:bg-soft"
           >
-            <FileText className="size-4" /> Unduh PDF Resmi Dinas
+            <FileText className="size-4" /> Unduh PDF
           </button>
           <button
             onClick={() => window.print()}
@@ -283,7 +294,7 @@ export function RekapPage({ reports }: { reports: Report[] }) {
         <div className="flex items-end justify-between border-b border-line p-5">
           <div>
             <div className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-              Rekapitulasi resmi
+              Rekapitulasi
             </div>
             <h3 className="text-2xl font-extrabold">
               {from} s/d {to}
