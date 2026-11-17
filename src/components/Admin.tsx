@@ -72,6 +72,15 @@ export function Admin({ user, users, reports, settings, logs, addUser, toggleUse
               <div className="relative overflow-hidden rounded-[2rem] bg-ink p-8 text-white sm:p-10">
                 <div className="pointer-events-none absolute -right-20 -top-24 size-80 rounded-full bg-amber-400/25 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-32 left-1/3 size-72 rounded-full bg-sky-400/15 blur-3xl" />
+                <div className="relative mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-widest text-amber-400">Pusat Kendali Operasional</div>
+                    <div className="mt-1 font-display text-2xl font-bold">Selamat datang, {user.fullName || 'Andi Daniel'}</div>
+                  </div>
+                  <div className="rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium text-slate-300">
+                    Administrator Dinas PUPR
+                  </div>
+                </div>
                 <div className="relative grid gap-8 md:grid-cols-4">
                   <Big l="Total laporan" n={visible.length} />
                   <Big l="Berat aktif" n={berat} />
