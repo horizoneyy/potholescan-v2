@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet'
+import { useEffect, useRef } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { SEV_COLOR, type Report } from '../data'
 
@@ -35,8 +35,14 @@ function createCustomMarkerIcon(color: string, isBerat: boolean, isSelesai: bool
 
 function MapRecenter({ center }: { center: [number, number] }) {
   const map = useMap()
+  const prevCenterRef = useRef<[number, number]>(center)
+
   useEffect(() => {
-    map.setView(center, map.getZoom())
+    const [prevLat, prevLon] = prevCenterRef.current
+    if (prevLat !== center[0] || prevLon !== center[1]) {
+      prevCenterRef.current = center
+      map.setView(center, map.getZoom())
+    }
   }, [center, map])
   return null
 }
@@ -45,7 +51,6 @@ interface MapViewProps {
   reports: Report[]
   className?: string
   userCoords?: { lat: number; lon: number }
-  userPin?: { x: number; y: number }
   radiusMeters?: number
 }
 
