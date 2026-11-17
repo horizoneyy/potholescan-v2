@@ -78,7 +78,29 @@ export function Public({
         setGpsActive(true)
         setGpsLoading(false)
       },
-      () => {
+      (err) => {
+        if (err.code === 3 /* TIMEOUT */) {
+          // Fallback coba akurasi standar jika high accuracy timeout
+          navigator.geolocation.getCurrentPosition(
+            (p) => {
+              const lat = parseFloat(p.coords.latitude.toFixed(5))
+              const lon = parseFloat(p.coords.longitude.toFixed(5))
+              setUserCoords({ lat, lon })
+              setCoordsLabel(`${lat}, ${lon}`)
+              setSrcLabel('GPS perangkat aktif')
+              setGpsActive(true)
+              setGpsLoading(false)
+            },
+            () => {
+              setGpsActive(false)
+              setGpsLoading(false)
+              setSrcLabel('Izin lokasi belum diberikan')
+              setCoordsLabel('GPS tidak aktif')
+            },
+            { timeout: 8000, enableHighAccuracy: false }
+          )
+          return
+        }
         setGpsActive(false)
         setGpsLoading(false)
         setSrcLabel('Izin lokasi belum diberikan')
@@ -94,18 +116,22 @@ export function Public({
 
   useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl) }, [fileUrl])
 
-  function handleCaptureUrl(url: string) {
+  function handleCaptureUrl(url: string, blob?: Blob) {
     setCam(false)
     setFileUrl(url)
     setRes(null)
     setErrorMsg(null)
     setPhase('idle')
 
-    // Fetch the blob from object URL
-    fetch(url)
-      .then((r) => r.blob())
-      .then((b) => setFileBlob(b))
-      .catch(() => {})
+    if (blob) {
+      setFileBlob(blob)
+    } else {
+      // Fetch the blob from object URL
+      fetch(url)
+        .then((r) => r.blob())
+        .then((b) => setFileBlob(b))
+        .catch(() => {})
+    }
   }
 
   async function analyze() {
@@ -425,7 +451,7 @@ export function Public({
                     </button>
                   ) : (
                     <button
-                      disabled={phase === 'scanning'}
+                      disabled={phase === 'scanning' || !fileBlob}
                       onClick={analyze}
                       className="rounded-2xl bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
                     >
