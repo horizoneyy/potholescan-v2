@@ -35,6 +35,7 @@ async def lifespan(app: FastAPI):
     print("=" * 60)
     inference_engine = InferenceEngine.get_instance()
     supabase_service = SupabaseService.get_instance()
+    supabase_service.sync_system_settings_to_config()
     yield
     print("Mematikan Server PotholeScan API...")
 

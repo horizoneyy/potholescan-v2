@@ -43,3 +43,38 @@ def test_upload_invalid_file_rejected():
     res = client.post("/api/reports", files=files)
     assert res.status_code == 422
     assert "JPEG/PNG" in res.json()["detail"]
+
+def test_settings_get_and_update():
+    # 1. Get settings (publik)
+    res = client.get("/api/settings")
+    assert res.status_code == 200
+    data = res.json()
+    assert "confidence_threshold_min" in data
+    assert "confidence_threshold_publish" in data
+    assert "proximity_radius_meters" in data
+
+    # 2. Login admin
+    login_res = client.post("/api/auth/login", json={"username": "admin", "password": "admin123"})
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+
+    # 3. Patch ambang batas dengan token admin
+    patch_res = client.patch(
+        "/api/settings",
+        json={"confidence_threshold_min": 0.25, "confidence_threshold_publish": 0.65, "proximity_radius_meters": 500},
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert patch_res.status_code == 200
+    updated = patch_res.json()
+    assert updated["success"] is True
+    assert updated["confidence_threshold_min"] == 0.25
+    assert updated["confidence_threshold_publish"] == 0.65
+    assert updated["proximity_radius_meters"] == 500
+
+def test_staff_accounts_login():
+    for user, pwd in [("daniel", "petugas123"), ("niyel", "petugas123")]:
+        res = client.post("/api/auth/login", json={"username": user, "password": pwd})
+        assert res.status_code == 200
+        data = res.json()
+        assert data["success"] is True
+        assert data["role"] == "petugas"
