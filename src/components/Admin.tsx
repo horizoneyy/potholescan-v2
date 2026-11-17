@@ -166,12 +166,12 @@ function Accounts({
                       <button
                         type="button"
                         onClick={() => {
-                          if (window.confirm(`Hapus staf ${u.fullName}?`)) {
+                          if (window.confirm(`Hapus staf ${u.fullName || u.username}?`)) {
                             deleteUser(u.id)
                           }
                         }}
                         title="Hapus akun staf"
-                        aria-label={`Hapus akun staf ${u.fullName}`}
+                        aria-label={`Hapus akun staf ${u.fullName || u.username}`}
                         className="grid size-8 place-items-center rounded-full border border-red-200 text-red-500 transition hover:bg-red-50"
                       >
                         <Trash2 className="size-4" />
