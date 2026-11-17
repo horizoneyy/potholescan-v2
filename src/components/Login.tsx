@@ -33,8 +33,9 @@ export function Login({
     try {
       // 1. Autentikasi riil ke backend FastAPI (POST /api/auth/login)
       const data = await loginApi(usernameClean, p)
+      const matchedUser = users.find((x) => x.username.toLowerCase() === data.username.toLowerCase())
       const authenticatedUser: User = {
-        id: data.user_id || 1,
+        id: data.user_id || matchedUser?.id || (data.role === 'admin' ? 1 : 2),
         username: data.username,
         password: '',
         fullName: data.full_name,
@@ -63,6 +64,7 @@ export function Login({
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col p-8 sm:p-12">
         <button
+          type="button"
           onClick={onBack}
           className="flex w-fit items-center gap-2 text-sm text-slate-500 hover:text-ink"
         >
@@ -120,6 +122,7 @@ export function Login({
             </div>
           )}
           <button
+            type="submit"
             disabled={loading}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
           >
@@ -162,6 +165,8 @@ function RoadInfrastructureIllustration() {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="w-full rounded-3xl border border-white/70 bg-white/80 p-4 shadow-2xl backdrop-blur-md"
+        role="img"
+        aria-label="Ilustrasi Deteksi Kerusakan Jalan Berbasis AI"
       >
         <defs>
           <linearGradient id="roadGrad" x1="250" y1="40" x2="250" y2="280" gradientUnits="userSpaceOnUse">
