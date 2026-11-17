@@ -257,6 +257,33 @@ class SupabaseService:
         res = self.client.table("users").select("id, username, full_name, role, is_active, created_at").order("id").execute()
         return res.data or []
 
+    def create_user(self, username: str, password_hash: str, full_name: str, role: str) -> Optional[Dict[str, Any]]:
+        if not self.client:
+            return None
+        try:
+            res = self.client.table("users").insert({
+                "username": username,
+                "password_hash": password_hash,
+                "full_name": full_name,
+                "role": role,
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }).execute()
+            return res.data[0] if res.data else None
+        except Exception as e:
+            print(f"[ERR] Gagal membuat user di Supabase: {e}")
+            return None
+
+    def update_user_status(self, user_id: int, is_active: bool) -> bool:
+        if not self.client:
+            return False
+        try:
+            res = self.client.table("users").update({"is_active": is_active}).eq("id", user_id).execute()
+            return len(res.data) > 0 if res.data else True
+        except Exception as e:
+            print(f"[ERR] Gagal mengubah status user di Supabase: {e}")
+            return False
+
     def delete_user(self, user_id: int) -> bool:
         if not self.client:
             return False

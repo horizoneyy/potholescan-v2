@@ -78,3 +78,33 @@ def test_staff_accounts_login():
         data = res.json()
         assert data["success"] is True
         assert data["role"] == "petugas"
+
+def test_create_and_delete_user():
+    # Login admin
+    login_res = client.post("/api/auth/login", json={"username": "admin", "password": "admin123"})
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+
+    # Buat user baru
+    create_res = client.post(
+        "/api/auth/users",
+        json={
+            "username": "petugas_uji",
+            "password": "password123",
+            "full_name": "Petugas Uji Coba",
+            "role": "petugas"
+        },
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert create_res.status_code == 200
+    new_user = create_res.json()
+    assert new_user["username"] == "petugas_uji"
+    user_id = new_user["id"]
+
+    # Hapus user
+    del_res = client.delete(
+        f"/api/auth/users/{user_id}",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert del_res.status_code == 200
+    assert del_res.json()["success"] is True
