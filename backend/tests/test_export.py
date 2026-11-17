@@ -72,3 +72,12 @@ def test_export_pdf_with_filters():
     res = client.get("/api/reports/pdf?status=ALL&from_date=2020-01-01&to_date=2099-12-31", headers=headers)
     assert res.status_code == 200
     assert res.content.startswith(b"%PDF-")
+
+def test_export_with_query_token():
+    token = get_auth_token()
+    res_excel = client.get(f"/api/reports/export/excel?token={token}")
+    assert res_excel.status_code == 200
+
+    res_pdf = client.get(f"/api/reports/pdf?token={token}")
+    assert res_pdf.status_code == 200
+

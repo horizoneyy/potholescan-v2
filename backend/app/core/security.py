@@ -39,12 +39,14 @@ def decode_token(token: str) -> Dict[str, Any]:
         )
 
 def get_current_user_from_cookie(request: Request) -> Dict[str, Any]:
-    """Mengambil token dari HTTP-Only cookie `access_token` atau header Authorization Bearer"""
+    """Mengambil token dari HTTP-Only cookie `access_token`, header Authorization Bearer, atau query parameter `token`"""
     token = request.cookies.get("access_token")
     if not token:
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
+    if not token:
+        token = request.query_params.get("token")
 
     if not token:
         raise HTTPException(
