@@ -37,8 +37,32 @@ export const STATUS_LABEL: Record<Status, string> = {
 const img = (id: string) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=240&h=240&q=70`
 
-const MONTHS: Record<string, string> = { Nov: '11' }
-const toIso = (d: string) => { const [dd, m, y] = d.split(' '); return `${y}-${MONTHS[m]}-${dd.padStart(2, '0')}` }
+const MONTHS: Record<string, string> = {
+  Jan: '01',
+  Feb: '02',
+  Mar: '03',
+  Apr: '04',
+  Mei: '05',
+  May: '05',
+  Jun: '06',
+  Jul: '07',
+  Agu: '08',
+  Aug: '08',
+  Sep: '09',
+  Okt: '10',
+  Oct: '10',
+  Nov: '11',
+  Des: '12',
+  Dec: '12',
+}
+const toIso = (d: string) => {
+  const parts = d.split(' ')
+  if (parts.length === 3) {
+    const [dd, m, y] = parts
+    return `${y}-${MONTHS[m] || '11'}-${dd.padStart(2, '0')}`
+  }
+  return todayIso()
+}
 
 const raw: Omit<Report, 'iso'>[] = [
   { id: 2055, street: 'Jl. Jend. Sudirman', x: 62, y: 38, lat: -6.2088, lon: 106.8227, severity: 'BERAT', status: 'BARU', confidence: 0.89, kind: 'pothole', hidden: false, date: '16 Nov 2026', img: img('photo-1515162816999-a0c47dc192f7') },

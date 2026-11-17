@@ -42,9 +42,15 @@ export function ReportTable({
                 <div className="flex items-center gap-3">
                   <img
                     src={r.annotated_img || r.img || DEFAULT_ROAD_IMG}
-                    alt=""
+                    alt={r.street}
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG;
+                      const target = e.currentTarget as HTMLImageElement;
+                      if (r.img && target.src !== r.img && target.src !== DEFAULT_ROAD_IMG) {
+                        target.src = r.img;
+                      } else if (target.src !== DEFAULT_ROAD_IMG) {
+                        target.onerror = null;
+                        target.src = DEFAULT_ROAD_IMG;
+                      }
                     }}
                     className="size-12 rounded-xl bg-soft object-cover"
                   />
@@ -140,7 +146,13 @@ export function EditModal({
           src={report.annotated_img || report.img || DEFAULT_ROAD_IMG}
           alt={report.street}
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG;
+            const target = e.currentTarget as HTMLImageElement;
+            if (report.img && target.src !== report.img && target.src !== DEFAULT_ROAD_IMG) {
+              target.src = report.img;
+            } else if (target.src !== DEFAULT_ROAD_IMG) {
+              target.onerror = null;
+              target.src = DEFAULT_ROAD_IMG;
+            }
           }}
           className="mt-4 h-40 w-full rounded-2xl bg-soft object-cover"
         />
