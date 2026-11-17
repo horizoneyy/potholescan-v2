@@ -136,7 +136,9 @@ export default function App() {
         active: true,
       },
     ])
-    log(session!.username, 'CREATE_USER', 'users', `Akun ${u.username.trim()} (${u.role}) dibuat`)
+    if (session) {
+      log(session.username, 'CREATE_USER', 'users', `Akun ${u.username.trim()} (${u.role}) dibuat`)
+    }
     return null
   }
 
@@ -174,12 +176,14 @@ export default function App() {
   const saveSettings = (s: Settings) => {
     setSettings(s)
     updateSettingsApi(s).catch(() => {})
-    log(
-      session!.username,
-      'UPDATE_SETTING',
-      'system_settings',
-      `min ${s.min.toFixed(2)}, publish ${s.publish.toFixed(2)}, radius ${s.radius} m`
-    )
+    if (session) {
+      log(
+        session.username,
+        'UPDATE_SETTING',
+        'system_settings',
+        `min ${s.min.toFixed(2)}, publish ${s.publish.toFixed(2)}, radius ${s.radius} m`
+      )
+    }
   }
 
   const logout = () => {

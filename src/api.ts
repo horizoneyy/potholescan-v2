@@ -105,6 +105,7 @@ export async function loginApi(username: string, password: string) {
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ username, password }),
   })
 
@@ -116,7 +117,10 @@ export async function loginApi(username: string, password: string) {
 }
 
 export async function logoutApi() {
-  await fetch(`${API_BASE}/auth/logout`, { method: 'POST' })
+  await fetch(`${API_BASE}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  })
 }
 
 export async function updateReportStatusApi(
@@ -128,6 +132,7 @@ export async function updateReportStatusApi(
   const res = await fetch(`${API_BASE}/reports/${id}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
       new_status: newStatus,
       notes,
@@ -143,7 +148,9 @@ export async function updateReportStatusApi(
 }
 
 export async function fetchSettingsApi() {
-  const res = await fetch(`${API_BASE}/settings`)
+  const res = await fetch(`${API_BASE}/settings`, {
+    credentials: 'include',
+  })
   if (!res.ok) throw new Error('Gagal mengambil pengaturan.')
   return res.json()
 }
@@ -152,6 +159,7 @@ export async function updateSettingsApi(settings: { min?: number; publish?: numb
   const res = await fetch(`${API_BASE}/settings`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
       confidence_threshold_min: settings.min,
       confidence_threshold_publish: settings.publish,
