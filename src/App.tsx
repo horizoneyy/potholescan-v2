@@ -16,6 +16,7 @@ import { Public } from './components/Public'
 import { Staff } from './components/Staff'
 import { Admin } from './components/Admin'
 import { Login } from './components/Login'
+import { DEFAULT_ROAD_IMG } from './components/MapView'
 import { fetchReports, fetchSettingsApi, fetchUsersApi, deleteUserApi, logoutApi, updateSettingsApi } from './api'
 
 export default function App() {
@@ -45,8 +46,8 @@ export default function App() {
             hidden: it.is_hidden,
             date: it.created_at.slice(0, 10),
             iso: it.created_at.slice(0, 10),
-            img: it.image_url,
-            annotated_img: it.annotated_image_url,
+            img: it.image_url || DEFAULT_ROAD_IMG,
+            annotated_img: it.annotated_image_url || undefined,
           }))
           // Gunakan data riil dari Supabase
           setReports(apiMapped)

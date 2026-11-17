@@ -44,7 +44,13 @@ export function ReportTable({
                     src={r.annotated_img || r.img || DEFAULT_ROAD_IMG}
                     alt=""
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+                      const target = e.currentTarget as HTMLImageElement
+                      if (r.img && target.src !== r.img && target.src !== DEFAULT_ROAD_IMG) {
+                        target.src = r.img
+                      } else if (target.src !== DEFAULT_ROAD_IMG) {
+                        target.onerror = null
+                        target.src = DEFAULT_ROAD_IMG
+                      }
                     }}
                     className="size-12 rounded-xl bg-soft object-cover"
                   />
@@ -139,7 +145,13 @@ export function EditModal({
           src={report.annotated_img || report.img || DEFAULT_ROAD_IMG}
           alt=""
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+            const target = e.currentTarget as HTMLImageElement
+            if (report.img && target.src !== report.img && target.src !== DEFAULT_ROAD_IMG) {
+              target.src = report.img
+            } else if (target.src !== DEFAULT_ROAD_IMG) {
+              target.onerror = null
+              target.src = DEFAULT_ROAD_IMG
+            }
           }}
           className="mt-4 h-44 w-full rounded-2xl bg-soft object-cover"
         />

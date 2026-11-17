@@ -64,8 +64,8 @@ class ReportCreateResponse(BaseModel):
 
 class ReportListItem(BaseModel):
     id: int
-    image_url: str
-    annotated_image_url: str
+    image_url: Optional[str] = ""
+    annotated_image_url: Optional[str] = ""
     latitude: float
     longitude: float
     location_source: str

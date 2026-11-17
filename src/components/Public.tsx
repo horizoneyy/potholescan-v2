@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { CameraCapture } from './Camera'
 import { AlertTriangle, Camera, MapPin, ScanLine, CheckCircle2, Clock, RotateCcw } from 'lucide-react'
 import { Card, Logo, SeverityBadge } from './ui'
-import { MapView } from './MapView'
+import { MapView, DEFAULT_ROAD_IMG } from './MapView'
 import { SEV_COLOR, todayIso, type Report, type Settings, type Severity } from '../data'
 import { submitReport, fetchNearby, type ApiReportResponse } from '../api'
 
@@ -165,8 +165,8 @@ export function Public({
         hidden: false,
         date: 'Hari ini',
         iso: todayIso(),
-        img: data.image_url || fileUrl!,
-        annotated_img: data.annotated_image_url,
+        img: data.image_url || fileUrl || DEFAULT_ROAD_IMG,
+        annotated_img: data.annotated_image_url || undefined,
       })
     } catch (err: any) {
       console.warn('Backend offline or error, running client fallback:', err)
@@ -201,7 +201,7 @@ export function Public({
           hidden: false,
           date: 'Hari ini',
           iso: todayIso(),
-          img: fileUrl!,
+          img: fileUrl || DEFAULT_ROAD_IMG,
         })
       }, 1500)
     }
@@ -337,8 +337,17 @@ export function Public({
                 <>
                   <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-slate-900">
                     <img
-                      src={res?.annotated_url || fileUrl}
+                      src={res?.annotated_url || fileUrl || DEFAULT_ROAD_IMG}
                       alt="Foto jalan"
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement
+                        if (fileUrl && target.src !== fileUrl) {
+                          target.src = fileUrl
+                        } else if (target.src !== DEFAULT_ROAD_IMG) {
+                          target.onerror = null
+                          target.src = DEFAULT_ROAD_IMG
+                        }
+                      }}
                       className="size-full object-cover"
                     />
                     {phase === 'scanning' && (

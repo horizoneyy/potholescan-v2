@@ -11,7 +11,43 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-export const DEFAULT_ROAD_IMG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="%23f1f5f9" stroke="%2394a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="4" fill="%23f1f5f9"/><path d="M12 2v20" stroke="%23cbd5e1" stroke-dasharray="2 2"/><path d="M4 19l4-4 3 3 5-5 4 4" stroke="%23e5484d" stroke-width="2"/><circle cx="16" cy="13" r="2" fill="%23e5484d"/></svg>'
+export const DEFAULT_ROAD_IMG =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" width="100%" height="100%">
+  <defs>
+    <linearGradient id="roadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="potholeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="160" fill="url(#roadGrad)"/>
+  <polygon points="30,160 85,0 155,0 210,160" fill="#334155" opacity="0.5"/>
+  <line x1="30" y1="160" x2="85" y2="0" stroke="#64748b" stroke-width="2.5" stroke-dasharray="8 6"/>
+  <line x1="210" y1="160" x2="155" y2="0" stroke="#64748b" stroke-width="2.5" stroke-dasharray="8 6"/>
+  <line x1="120" y1="15" x2="120" y2="40" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="120" y1="60" x2="120" y2="95" stroke="#fbbf24" stroke-width="4.5" stroke-linecap="round"/>
+  <line x1="120" y1="115" x2="120" y2="155" stroke="#fbbf24" stroke-width="5.5" stroke-linecap="round"/>
+  <g transform="translate(148, 105)">
+    <ellipse cx="0" cy="0" rx="34" ry="18" fill="url(#potholeGrad)" stroke="#ef4444" stroke-width="2" stroke-dasharray="5 3"/>
+    <ellipse cx="-2" cy="1" rx="22" ry="11" fill="#020617"/>
+    <path d="M-30,-2 L-42,-7 M28,4 L40,10 M-8,-16 L-12,-26 M14,14 L20,24" stroke="#f43f5e" stroke-width="1.8" stroke-linecap="round"/>
+    <g transform="translate(0, -22)">
+      <path d="M0,0 C-7,0 -12,-5 -12,-12 C-12,-19 0,-30 0,-30 C0,-30 12,-19 12,-12 C12,-5 7,0 0,0 Z" fill="#ef4444"/>
+      <circle cx="0" cy="-12" r="4.5" fill="#ffffff"/>
+    </g>
+  </g>
+  <g transform="translate(14, 14)">
+    <rect width="96" height="20" rx="10" fill="#0f172a" opacity="0.85" stroke="#334155" stroke-width="1"/>
+    <circle cx="10" cy="10" r="4" fill="#38bdf8"/>
+    <text x="20" y="14" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" letter-spacing="0.5">POTHOLESCAN</text>
+  </g>
+</svg>`
+  )
 
 function createCustomMarkerIcon(color: string, isBerat: boolean, isSelesai: boolean) {
   const pulseHtml = isBerat && !isSelesai
@@ -131,7 +167,13 @@ export function MapView({
                       src={r.annotated_img || r.img || DEFAULT_ROAD_IMG}
                       alt={r.street}
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+                        const target = e.currentTarget as HTMLImageElement
+                        if (r.img && target.src !== r.img && target.src !== DEFAULT_ROAD_IMG) {
+                          target.src = r.img
+                        } else if (target.src !== DEFAULT_ROAD_IMG) {
+                          target.onerror = null
+                          target.src = DEFAULT_ROAD_IMG
+                        }
                       }}
                       className="h-28 w-full object-cover"
                     />
