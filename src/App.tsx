@@ -24,6 +24,7 @@ import {
   deleteUserApi,
   logoutApi,
   updateSettingsApi,
+  updateReportStatusApi,
 } from "./api";
 
 export default function App() {
@@ -120,6 +121,12 @@ export default function App() {
     hide: boolean,
   ) => {
     setReports((p) => p.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    const targetStatus = patch.status || from;
+    updateReportStatusApi(id, targetStatus, patch.notes || "", hide).catch(
+      (err) => {
+        console.warn("Gagal sinkron status laporan ke server:", err);
+      },
+    );
     log(
       session?.username || "petugas",
       hide ? "HIDE_REPORT" : "STATUS_CHANGE",

@@ -80,10 +80,12 @@ export async function submitReport(
 export async function fetchReports(
   status?: string,
   severity?: string,
+  includeHidden: boolean = true,
 ): Promise<{ total: number; items: ApiReportItem[] }> {
   const params = new URLSearchParams();
   if (status && status !== "ALL") params.append("status", status);
   if (severity && severity !== "ALL") params.append("severity", severity);
+  if (includeHidden) params.append("include_hidden", "true");
 
   const res = await fetch(`${API_BASE}/reports?${params.toString()}`);
   if (!res.ok) {

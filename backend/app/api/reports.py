@@ -123,13 +123,14 @@ async def submit_report(
 async def list_reports(
     status: Optional[StatusEnum] = None,
     severity: Optional[SeverityEnum] = None,
+    include_hidden: bool = False,
     limit: int = 100
 ):
     """Mendapatkan daftar laporan publik yang aktif (FR-10)"""
     reports = supabase_svc.get_reports(
         status=status.value if status else None,
         severity=severity.value if severity else None,
-        include_hidden=False,
+        include_hidden=include_hidden,
         limit=limit
     )
     return ReportListResponse(total=len(reports), items=reports)
