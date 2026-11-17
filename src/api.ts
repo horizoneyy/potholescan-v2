@@ -175,13 +175,18 @@ export function getExcelDownloadUrl(fromDate?: string, toDate?: string, status: 
 }
 
 export async function fetchUsersApi() {
-  const res = await fetch(`${API_BASE}/auth/users`)
+  const res = await fetch(`${API_BASE}/auth/users`, {
+    credentials: 'include',
+  })
   if (!res.ok) throw new Error('Gagal mengambil daftar pengguna.')
   return res.json()
 }
 
 export async function deleteUserApi(userId: number) {
-  const res = await fetch(`${API_BASE}/auth/users/${userId}`, { method: 'DELETE' })
+  const res = await fetch(`${API_BASE}/auth/users/${userId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
   if (!res.ok) throw new Error('Gagal menghapus akun staf.')
   return res.json()
 }

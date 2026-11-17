@@ -43,3 +43,41 @@ def test_upload_invalid_file_rejected():
     res = client.post("/api/reports", files=files)
     assert res.status_code == 422
     assert "JPEG/PNG" in res.json()["detail"]
+
+def test_delete_user_requires_admin():
+    # 1. Pastikan client tidak memiliki sesi aktif (logout)
+    client.post("/api/auth/logout")
+    # 2. Permintaan tanpa autentikasi wajib ditolak dengan 401
+    res = client.delete("/api/auth/users/2")
+    assert res.status_code in [401, 403]
+
+def test_admin_delete_staff_flow():
+    # 1. Login as admin
+    login_res = client.post("/api/auth/login", json={"username": "admin", "password": "admin123"})
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 2. Admin cannot delete self (ID 1)
+    del_self = client.delete("/api/auth/users/1", headers=headers, cookies={"access_token": token})
+    assert del_self.status_code == 400
+
+    # 3. Create a temporary staff to delete
+    create_res = client.post(
+        "/api/auth/users",
+        headers=headers,
+        cookies={"access_token": token},
+        json={
+            "username": "temp_petugas",
+            "password": "password123",
+            "full_name": "Petugas Sementara",
+            "role": "petugas"
+        }
+    )
+    assert create_res.status_code == 200
+    temp_id = create_res.json()["id"]
+
+    # 4. Admin deletes temporary staff
+    del_res = client.delete(f"/api/auth/users/{temp_id}", headers=headers, cookies={"access_token": token})
+    assert del_res.status_code == 200
+    assert del_res.json()["success"] is True

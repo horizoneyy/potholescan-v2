@@ -124,6 +124,12 @@ async def list_users():
 @router.delete("/users/{user_id}", dependencies=[Depends(require_role(["admin"]))])
 async def delete_user(user_id: int, current_user: dict = Depends(get_current_user_from_cookie)):
     """Menghapus akun staf oleh administrator"""
+    if user_id == current_user.get("user_id"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Administrator tidak dapat menghapus akunnya sendiri."
+        )
+    
     deleted = False
     if supabase_svc.is_configured():
         deleted = supabase_svc.delete_user(user_id)

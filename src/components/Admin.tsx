@@ -41,7 +41,7 @@ export function Admin({ user, users, reports, settings, logs, update, addUser, t
         <div className="px-2 pt-1"><Logo /></div>
         <div className="mt-6 rounded-2xl bg-soft p-4">
           <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Administrator</div>
-          <div className="mt-1 font-display text-lg font-bold">{user.fullName}</div>
+          <div className="mt-1 font-display text-lg font-bold">{user.fullName || 'Andi Daniel'}</div>
         </div>
         <nav className="mt-5 flex flex-1 flex-col gap-1">
           {NAV.map(({ id, label, icon: Icon }) => (
@@ -156,6 +156,7 @@ function Accounts({
                 {u.id !== me && (
                   <div className="flex items-center justify-end gap-2">
                     <button
+                      type="button"
                       onClick={() => toggleUser(u.id)}
                       className="rounded-full border border-line px-3.5 py-1.5 text-xs font-semibold hover:bg-soft"
                     >
@@ -163,12 +164,14 @@ function Accounts({
                     </button>
                     {deleteUser && (
                       <button
+                        type="button"
                         onClick={() => {
                           if (window.confirm(`Hapus staf ${u.fullName}?`)) {
                             deleteUser(u.id)
                           }
                         }}
                         title="Hapus akun staf"
+                        aria-label={`Hapus akun staf ${u.fullName}`}
                         className="grid size-8 place-items-center rounded-full border border-red-200 text-red-500 transition hover:bg-red-50"
                       >
                         <Trash2 className="size-4" />
@@ -213,7 +216,7 @@ function Thresholds({ settings, save }: { settings: Settings; save: (s: Settings
       </div>
       <Row label="Ambang minimal deteksi" desc="Deteksi di bawah angka ini diabaikan sebagai jalan normal." k="min" min={0.1} max={0.6} step={0.01} fmt={(v) => v.toFixed(2)} />
       <Row label="Ambang publikasi otomatis" desc="Di atas angka ini laporan langsung tampil di peta publik." k="publish" min={0.3} max={0.95} step={0.01} fmt={(v) => v.toFixed(2)} />
-      <Row label="Radius peringatan" desc="Jarak pencarian lubang aktif di sekitar pengendara." k="radius" min={100} max={2000} step={50} fmt={(v) => `${v} m`} />
+      <Row label="Radius peringatan" desc="Jarak pencarian titik lubang di sekitar pengendara." k="radius" min={100} max={2000} step={50} fmt={(v) => `${v} m`} />
       {bad && <p className="mt-4 text-sm text-red-600">Ambang minimal harus lebih kecil dari ambang publikasi.</p>}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <button disabled={bad} onClick={() => { save(s); setOk(true) }} className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
