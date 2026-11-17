@@ -136,11 +136,11 @@ function RoadInfrastructureIllustration() {
         className="w-full rounded-3xl border border-white/70 bg-white/80 p-4 shadow-2xl backdrop-blur-md"
       >
         <defs>
-          <linearGradient id="roadGrad" x1="250" y1="40" x2="250" y2="280" gradientUnits="userSpaceOnUse">
+          <linearGradient id="loginRoadGrad" x1="250" y1="40" x2="250" y2="280" gradientUnits="userSpaceOnUse">
             <stop stopColor="#334155" />
             <stop offset="1" stopColor="#0f172a" />
           </linearGradient>
-          <radialGradient id="pulseRed" cx="50%" cy="50%" r="50%">
+          <radialGradient id="loginPulseRed" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#e5484d" stopOpacity="0.5" />
             <stop offset="100%" stopColor="#e5484d" stopOpacity="0" />
           </radialGradient>
@@ -152,7 +152,7 @@ function RoadInfrastructureIllustration() {
         <line x1="30" y1="230" x2="470" y2="230" stroke="#cbd5e1" strokeDasharray="4 4" />
 
         {/* Road Polygon */}
-        <polygon points="190,40 310,40 430,280 70,280" fill="url(#roadGrad)" />
+        <polygon points="190,40 310,40 430,280 70,280" fill="url(#loginRoadGrad)" />
 
         {/* Road Markings */}
         <line x1="250" y1="45" x2="250" y2="85" stroke="#f59e0b" strokeWidth="4" />
@@ -164,7 +164,7 @@ function RoadInfrastructureIllustration() {
         <line x1="310" y1="40" x2="430" y2="280" stroke="#94a3b8" strokeWidth="3" />
 
         {/* Detected Pothole 1 (Heavy - Red) */}
-        <ellipse cx="180" cy="210" rx="36" ry="18" fill="url(#pulseRed)" />
+        <ellipse cx="180" cy="210" rx="36" ry="18" fill="url(#loginPulseRed)" />
         <ellipse cx="180" cy="210" rx="24" ry="12" fill="#020617" />
         <rect x="145" y="185" width="70" height="48" rx="6" fill="none" stroke="#e5484d" strokeWidth="2" strokeDasharray="3 3" />
         <rect x="145" y="168" width="80" height="18" rx="4" fill="#e5484d" />

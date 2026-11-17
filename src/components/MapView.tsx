@@ -16,16 +16,16 @@ export const DEFAULT_ROAD_IMG =
   encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" width="100%" height="100%">
   <defs>
-    <linearGradient id="roadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+    <linearGradient id="defaultRoadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#1e293b"/>
       <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <linearGradient id="potholeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="defaultPotholeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#020617"/>
       <stop offset="100%" stop-color="#1e293b"/>
     </linearGradient>
   </defs>
-  <rect width="240" height="160" fill="url(#roadGrad)"/>
+  <rect width="240" height="160" fill="url(#defaultRoadGrad)"/>
   <polygon points="30,160 85,0 155,0 210,160" fill="#334155" opacity="0.5"/>
   <line x1="30" y1="160" x2="85" y2="0" stroke="#64748b" stroke-width="2.5" stroke-dasharray="8 6"/>
   <line x1="210" y1="160" x2="155" y2="0" stroke="#64748b" stroke-width="2.5" stroke-dasharray="8 6"/>
@@ -33,7 +33,7 @@ export const DEFAULT_ROAD_IMG =
   <line x1="120" y1="60" x2="120" y2="95" stroke="#fbbf24" stroke-width="4.5" stroke-linecap="round"/>
   <line x1="120" y1="115" x2="120" y2="155" stroke="#fbbf24" stroke-width="5.5" stroke-linecap="round"/>
   <g transform="translate(148, 105)">
-    <ellipse cx="0" cy="0" rx="34" ry="18" fill="url(#potholeGrad)" stroke="#ef4444" stroke-width="2" stroke-dasharray="5 3"/>
+    <ellipse cx="0" cy="0" rx="34" ry="18" fill="url(#defaultPotholeGrad)" stroke="#ef4444" stroke-width="2" stroke-dasharray="5 3"/>
     <ellipse cx="-2" cy="1" rx="22" ry="11" fill="#020617"/>
     <path d="M-30,-2 L-42,-7 M28,4 L40,10 M-8,-16 L-12,-26 M14,14 L20,24" stroke="#f43f5e" stroke-width="1.8" stroke-linecap="round"/>
     <g transform="translate(0, -22)">
