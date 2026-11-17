@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, EyeOff, FileText, Printer, X } from "lucide-react";
 import { Card, SeverityBadge, StatusBadge } from "./ui";
 import { STATUS_LABEL, todayIso, type Report, type Status } from "../data";
@@ -16,6 +16,8 @@ export function ReportTable({
   onOpen?: (r: Report) => void;
   readOnly?: boolean;
 }) {
+  const showAction = Boolean(onOpen && !readOnly);
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
@@ -25,13 +27,13 @@ export function ReportTable({
             <th className="px-3 font-semibold">Keparahan</th>
             <th className="px-3 font-semibold">Keyakinan</th>
             <th className="px-3 font-semibold">Status</th>
-            {!readOnly && <th className="px-5" />}
+            {showAction && <th className="px-5" />}
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={readOnly ? 4 : 5} className="px-5 py-14 text-center text-slate-500">
+              <td colSpan={showAction ? 5 : 4} className="px-5 py-14 text-center text-slate-500">
                 Tidak ada laporan di daftar ini.
               </td>
             </tr>
@@ -69,7 +71,7 @@ export function ReportTable({
               <td className="px-3">
                 <StatusBadge s={r.status} />
               </td>
-              {!readOnly && onOpen && (
+              {showAction && onOpen && (
                 <td className="px-5 text-right">
                   <button
                     onClick={() => onOpen(r)}
@@ -239,18 +241,15 @@ export function RekapPage({ reports }: { reports: Report[] }) {
       : todayIso(),
   );
   const [st, setSt] = useState<"ALL" | Status>("ALL");
+  const isInitializedRef = useRef(false);
 
-  // Sinkronisasi rentang tanggal dengan data laporan yang aktif
+  // Inisialisasi rentang tanggal otomatis saat data laporan tersedia pertama kali
   useEffect(() => {
-    if (isos.length > 0) {
-      if (!from || from > isos[0]) {
-        setFrom(isos[0]);
-      }
+    if (!isInitializedRef.current && isos.length > 0) {
+      setFrom(isos[0]);
       const maxIso = isos.at(-1) ?? todayIso();
-      const end = todayIso() > maxIso ? todayIso() : maxIso;
-      if (!to || to < end) {
-        setTo(end);
-      }
+      setTo(todayIso() > maxIso ? todayIso() : maxIso);
+      isInitializedRef.current = true;
     }
   }, [isos]);
 
@@ -262,14 +261,23 @@ export function RekapPage({ reports }: { reports: Report[] }) {
     [reports, from, to, st],
   );
 
+  function triggerDownload(url: string) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   function downloadExcel() {
     const url = getExcelDownloadUrl(from, to, st === "ALL" ? "SEMUA" : st);
-    window.open(url, "_blank");
+    triggerDownload(url);
   }
 
   function downloadOfficialPdf() {
     const url = getPdfDownloadUrl(from, to, st === "ALL" ? "SEMUA" : st);
-    window.open(url, "_blank");
+    triggerDownload(url);
   }
 
   const field = "mt-1.5 rounded-xl border border-line bg-soft px-3 py-2.5 text-sm";
