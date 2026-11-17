@@ -19,7 +19,7 @@ const TITLE: Record<Page, string> = { ringkasan: 'Pusat kendali', laporan: 'Semu
 interface Props {
   user: User; users: User[]; reports: Report[]; settings: Settings; logs: LogEntry[]
   update: (id: number, p: Partial<Report>, from: Status, hide: boolean) => void
-  addUser: (u: { username: string; password: string; fullName: string; role: Role }) => string | null
+  addUser: (u: { username: string; password: string; fullName: string; role: Role }) => Promise<string | null> | string | null
   toggleUser: (id: number) => void
   deleteUser?: (id: number) => void
   saveSettings: (s: Settings) => void
@@ -162,7 +162,7 @@ function Accounts({
                     >
                       {u.active ? 'Nonaktifkan' : 'Aktifkan'}
                     </button>
-                    {deleteUser && (
+                    {deleteUser && u.role !== 'admin' && (
                       <button
                         type="button"
                         onClick={() => {
@@ -186,7 +186,7 @@ function Accounts({
       </Card>
       <Card className="h-fit p-6">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-slate-500"><UserPlus className="size-4" />Akun baru</div>
-        <form className="mt-4" onSubmit={(e) => { e.preventDefault(); const m = addUser(f); setErr(m ?? ''); if (!m) setF({ fullName: '', username: '', password: '', role: 'petugas' }) }}>
+        <form className="mt-4" onSubmit={async (e) => { e.preventDefault(); const m = await addUser(f); setErr(m ?? ''); if (!m) setF({ fullName: '', username: '', password: '', role: 'petugas' }) }}>
           <label className="block text-sm font-medium">Nama lengkap<input value={f.fullName} onChange={(e) => setF({ ...f, fullName: e.target.value })} className={inp} /></label>
           <label className="mt-3 block text-sm font-medium">Username<input value={f.username} onChange={(e) => setF({ ...f, username: e.target.value })} className={inp} /></label>
           <label className="mt-3 block text-sm font-medium">Kata sandi<input type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} className={inp} /></label>

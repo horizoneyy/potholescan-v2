@@ -263,6 +263,21 @@ class SupabaseService:
         res = self.client.table("users").delete().eq("id", user_id).execute()
         return len(res.data) > 0 if res.data else True
 
+    def create_user(self, username: str, password_hash: str, full_name: str, role: str) -> Optional[int]:
+        if not self.client:
+            return None
+        res = self.client.table("users").insert({
+            "username": username,
+            "password_hash": password_hash,
+            "full_name": full_name,
+            "role": role,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }).execute()
+        if res.data:
+            return res.data[0]["id"]
+        return None
+
     def log_audit(self, actor: str, action: str, target_entity: str, target_id: Optional[int], details: str):
         if not self.client:
             return

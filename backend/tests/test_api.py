@@ -1,4 +1,5 @@
 import io
+import uuid
 import pytest
 from fastapi.testclient import TestClient
 from backend.app.main import app
@@ -59,16 +60,16 @@ def test_admin_delete_staff_flow():
     headers = {"Authorization": f"Bearer {token}"}
 
     # 2. Admin cannot delete self (ID 1)
-    del_self = client.delete("/api/auth/users/1", headers=headers, cookies={"access_token": token})
+    del_self = client.delete("/api/auth/users/1", headers=headers)
     assert del_self.status_code == 400
 
-    # 3. Create a temporary staff to delete
+    # 3. Create a temporary staff with unique username to delete
+    unique_uname = f"staff_{uuid.uuid4().hex[:6]}"
     create_res = client.post(
         "/api/auth/users",
         headers=headers,
-        cookies={"access_token": token},
         json={
-            "username": "temp_petugas",
+            "username": unique_uname,
             "password": "password123",
             "full_name": "Petugas Sementara",
             "role": "petugas"
@@ -78,6 +79,6 @@ def test_admin_delete_staff_flow():
     temp_id = create_res.json()["id"]
 
     # 4. Admin deletes temporary staff
-    del_res = client.delete(f"/api/auth/users/{temp_id}", headers=headers, cookies={"access_token": token})
+    del_res = client.delete(f"/api/auth/users/{temp_id}", headers=headers)
     assert del_res.status_code == 200
     assert del_res.json()["success"] is True

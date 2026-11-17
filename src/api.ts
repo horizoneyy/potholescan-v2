@@ -190,3 +190,27 @@ export async function deleteUserApi(userId: number) {
   if (!res.ok) throw new Error('Gagal menghapus akun staf.')
   return res.json()
 }
+
+export async function createUserApi(payload: {
+  username: string
+  password: string
+  fullName: string
+  role: string
+}) {
+  const res = await fetch(`${API_BASE}/auth/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      username: payload.username,
+      password: payload.password,
+      full_name: payload.fullName,
+      role: payload.role,
+    }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Gagal membuat pengguna baru.' }))
+    throw new Error(err.detail || 'Gagal membuat pengguna baru.')
+  }
+  return res.json()
+}

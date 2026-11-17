@@ -16,7 +16,7 @@ import { Public } from './components/Public'
 import { Staff } from './components/Staff'
 import { Admin } from './components/Admin'
 import { Login } from './components/Login'
-import { fetchReports, fetchSettingsApi, fetchUsersApi, deleteUserApi, logoutApi, updateSettingsApi } from './api'
+import { fetchReports, fetchSettingsApi, fetchUsersApi, deleteUserApi, createUserApi, logoutApi, updateSettingsApi } from './api'
 
 export default function App() {
   const [view, setView] = useState<'public' | 'login'>('public')
@@ -107,13 +107,34 @@ export default function App() {
     )
   }
 
-  const addUser = (u: { username: string; password: string; fullName: string; role: Role }) => {
+  const addUser = async (u: { username: string; password: string; fullName: string; role: Role }) => {
     if (!u.fullName.trim() || !u.username.trim() || u.password.length < 6)
       return 'Isi semua kolom; kata sandi minimal 6 karakter.'
-    if (users.some((x) => x.username === u.username.trim())) return 'Username sudah dipakai.'
+    if (users.some((x) => x.username.toLowerCase() === u.username.trim().toLowerCase()))
+      return 'Username sudah dipakai.'
+
+    let newId = Math.max(0, ...users.map((x) => x.id)) + 1
+    try {
+      const created = await createUserApi({
+        username: u.username.trim(),
+        password: u.password,
+        fullName: u.fullName.trim(),
+        role: u.role,
+      })
+      if (created?.id) newId = created.id
+    } catch (e: any) {
+      console.warn('Gagal menyimpan user ke server, fallback ke lokal:', e)
+    }
+
     setUsers((p) => [
       ...p,
-      { ...u, username: u.username.trim(), id: Math.max(...p.map((x) => x.id)) + 1, active: true },
+      {
+        ...u,
+        username: u.username.trim(),
+        fullName: u.fullName.trim(),
+        id: newId,
+        active: true,
+      },
     ])
     log(session!.username, 'CREATE_USER', 'users', `Akun ${u.username.trim()} (${u.role}) dibuat`)
     return null
