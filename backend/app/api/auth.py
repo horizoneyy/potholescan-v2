@@ -1,5 +1,5 @@
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, HTTPException, status, Response, Depends, Request
+from fastapi import APIRouter, HTTPException, status, Response, Depends
 from backend.app.models.schemas import LoginRequest, LoginResponse, UserCreate, UserResponse, RoleEnum
 from backend.app.core.security import (
     verify_password,

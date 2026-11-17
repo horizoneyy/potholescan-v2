@@ -151,10 +151,18 @@ export default function App() {
 
   const handleDeleteUser = async (id: number) => {
     const target = users.find((x) => x.id === id)
+    if (target?.role === 'admin') {
+      alert('Akun Administrator tidak dapat dihapus.')
+      return
+    }
     try {
       await deleteUserApi(id)
-    } catch (e) {
-      console.warn('Gagal menghapus user di server, hapus secara lokal:', e)
+    } catch (e: any) {
+      console.warn('Gagal menghapus user di server:', e)
+      if (e?.message && e.message.includes('Administrator')) {
+        alert(e.message)
+        return
+      }
     }
     setUsers((p) => p.filter((x) => x.id !== id))
     if (session) {

@@ -187,7 +187,10 @@ export async function deleteUserApi(userId: number) {
     method: 'DELETE',
     credentials: 'include',
   })
-  if (!res.ok) throw new Error('Gagal menghapus akun staf.')
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Gagal menghapus akun staf.' }))
+    throw new Error(err.detail || 'Gagal menghapus akun staf.')
+  }
   return res.json()
 }
 
