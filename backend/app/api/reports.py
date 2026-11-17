@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status, Depends, Request
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status, Depends, Request, Query
 from backend.app.models.schemas import (
     ReportCreateResponse,
     ReportListResponse,
@@ -121,14 +121,14 @@ async def submit_report(
 
 @router.get("", response_model=ReportListResponse)
 async def list_reports(
-    status: Optional[StatusEnum] = None,
+    status_filter: Optional[StatusEnum] = Query(None, alias="status"),
     severity: Optional[SeverityEnum] = None,
     include_hidden: bool = False,
     limit: int = 100
 ):
     """Mendapatkan daftar laporan publik yang aktif (FR-10)"""
     reports = supabase_svc.get_reports(
-        status=status.value if status else None,
+        status=status_filter.value if status_filter else None,
         severity=severity.value if severity else None,
         include_hidden=include_hidden,
         limit=limit

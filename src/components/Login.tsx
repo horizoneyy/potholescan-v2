@@ -38,7 +38,7 @@ export function Login({
         id: data.user_id || matchedUser?.id || (data.role === 'admin' ? 1 : 2),
         username: data.username,
         password: '',
-        fullName: data.full_name,
+        fullName: data.full_name || matchedUser?.fullName || (data.role === 'admin' ? 'Andi Daniel' : data.username),
         role: data.role,
         active: true,
       }
