@@ -443,6 +443,18 @@ classDiagram
 
 ## 4. Desain Basis Data Relasional Supabase PostgreSQL + PostGIS
 
+> [!NOTE] Klarifikasi Arsitektur Skema Database Spasial
+> Basis data PotholeScan pada Supabase PostgreSQL membedakan secara tegas antara **Tabel Operasional Aplikasi** (6 tabel) dan **Tabel Internal Ekstensi PostGIS** (1 tabel):
+> 1. **Tabel Operasional Aplikasi (6 Tabel):**
+>    - `public.users`: Autentikasi RBAC (Admin & Petugas) dengan hashing Argon2id.
+>    - `public.reports`: Master data laporan jalan rusak, koordinat geospasial WGS84, keparahan agregat, dan status verifikasi.
+>    - `public.detections`: Bounding box individual hasil deteksi YOLOv8 (`pothole`, `crack`), confidence score, dan rasio luasan.
+>    - `public.status_history`: Jejak audit siklus hidup transisi status laporan (`BARU` &rarr; `DIVERIFIKASI` &rarr; `DIKERJAKAN` &rarr; `SELESAI`).
+>    - `public.system_settings`: Persistensi parameter ambang deteksi dinamis AI (`confidence_threshold_min`, `confidence_threshold_publish`, `proximity_radius_meters`).
+>    - `public.audit_logs`: Log kepatuhan aktivitas administratif dan mutasi data oleh pengguna berwenang.
+> 2. **Tabel Sistem Bawaan PostGIS Internal (1 Tabel):**
+>    - `public.spatial_ref_sys`: Tabel bawaan yang otomatis diinisialisasi saat perintah `CREATE EXTENSION postgis;` dieksekusi. Tabel ini berisi daftar referensi sistem koordinat proyeksi standar EPSG (misal EPSG:4326/WGS84). Tabel ini murni berfungsi untuk komputasi internal engine PostGIS (seperti fungsi `ST_DWithin` dan `ST_DistanceSphere`) dan **bukan merupakan tabel data operasional transaksi aplikasi**.
+
 Berikut adalah DDL SQL lengkap yang siap dieksekusi pada *SQL Editor* Supabase:
 
 ```sql

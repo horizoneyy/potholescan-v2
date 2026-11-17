@@ -1,5 +1,5 @@
-from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, HTTPException, status, Response, Depends
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, HTTPException, status, Response, Depends, Request
 from backend.app.models.schemas import LoginRequest, LoginResponse, UserCreate, UserResponse, RoleEnum
 from backend.app.core.security import (
     verify_password,
@@ -68,12 +68,7 @@ async def login(credentials: LoginRequest, response: Response):
 
     # Terbitkan token JWT
     access_token = create_access_token(
-        data={
-            "sub": user["username"],
-            "role": user["role"],
-            "user_id": user["id"],
-            "full_name": user.get("full_name", "")
-        }
+        data={"sub": user["username"], "role": user["role"], "user_id": user["id"]}
     )
 
     # Simpan di HTTP-Only Cookie yang aman
@@ -88,7 +83,6 @@ async def login(credentials: LoginRequest, response: Response):
 
     return LoginResponse(
         success=True,
-        user_id=user["id"],
         username=user["username"],
         full_name=user["full_name"],
         role=user["role"],
@@ -105,8 +99,7 @@ async def get_me(current_user: dict = Depends(get_current_user_from_cookie)):
     return {
         "username": current_user.get("sub"),
         "role": current_user.get("role"),
-        "user_id": current_user.get("user_id"),
-        "full_name": current_user.get("full_name") or ("Andi Daniel" if current_user.get("role") == "admin" else current_user.get("sub"))
+        "user_id": current_user.get("user_id")
     }
 
 @router.get("/users", dependencies=[Depends(require_role(["admin"]))])
@@ -131,19 +124,6 @@ async def list_users():
 @router.delete("/users/{user_id}", dependencies=[Depends(require_role(["admin"]))])
 async def delete_user(user_id: int, current_user: dict = Depends(get_current_user_from_cookie)):
     """Menghapus akun staf oleh administrator"""
-    target_is_admin = (user_id == 1 or user_id == current_user.get("user_id"))
-    if not target_is_admin:
-        for u in LOCAL_USERS.values():
-            if u["id"] == user_id and u.get("role") == "admin":
-                target_is_admin = True
-                break
-
-    if target_is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Akun Administrator tidak dapat dihapus."
-        )
-    
     deleted = False
     if supabase_svc.is_configured():
         deleted = supabase_svc.delete_user(user_id)
@@ -169,46 +149,41 @@ async def delete_user(user_id: int, current_user: dict = Depends(get_current_use
 
 @router.post("/users", response_model=UserResponse, dependencies=[Depends(require_role(["admin"]))])
 async def create_user(payload: UserCreate, current_user: dict = Depends(get_current_user_from_cookie)):
-    username_clean = payload.username.strip().lower()
-    if username_clean in LOCAL_USERS or (supabase_svc.is_configured() and supabase_svc.get_user_by_username(username_clean)):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username sudah digunakan oleh akun lain."
-        )
-
-    if len(payload.password) < 6:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Kata sandi minimal 6 karakter."
-        )
-
     pwd_hash = get_password_hash(payload.password)
+    role_val = payload.role.value if hasattr(payload.role, "value") else str(payload.role)
+
     user_id = len(LOCAL_USERS) + 1
     if supabase_svc.is_configured():
-        new_id = supabase_svc.create_user(
-            username=username_clean,
+        existing = supabase_svc.get_user_by_username(payload.username)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Username '{payload.username}' sudah dipakai."
+            )
+        created = supabase_svc.create_user(
+            username=payload.username,
             password_hash=pwd_hash,
-            full_name=payload.full_name.strip(),
-            role=payload.role
+            full_name=payload.full_name,
+            role=role_val
         )
-        if new_id:
-            user_id = new_id
+        if created:
+            user_id = created["id"]
 
     new_user = {
         "id": user_id,
-        "username": username_clean,
+        "username": payload.username,
         "password_hash": pwd_hash,
-        "full_name": payload.full_name.strip(),
+        "full_name": payload.full_name,
         "role": payload.role,
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    LOCAL_USERS[username_clean] = new_user
+    LOCAL_USERS[payload.username] = new_user
     supabase_svc.log_audit(
         actor=current_user.get("sub", "admin"),
         action="CREATE_USER",
         target_entity="users",
         target_id=new_user["id"],
-        details=f"Membuat user baru: {username_clean} ({payload.role})"
+        details=f"Membuat user baru: {payload.username} ({role_val})"
     )
     return new_user
