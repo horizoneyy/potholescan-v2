@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status, Depends, Request
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status, Depends, Request, Query
 from backend.app.models.schemas import (
     ReportCreateResponse,
     ReportListResponse,
@@ -28,7 +28,7 @@ def validate_image_magic_bytes(header: bytes) -> str:
     elif header.startswith(b"\x89PNG\r\n\x1a\n"):
         return "png"
     raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         detail="Berkas bukan citra JPEG/PNG yang valid. Sistem menolak berkas rusak/format palsu."
     )
 
@@ -49,7 +49,7 @@ async def submit_report(
     # 1. Validasi Ukuran Berkas (Maksimal 10 MB)
     if len(contents) > 10 * 1024 * 1024:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Ukuran berkas melebihi batas maksimal 10 MB."
         )
 
@@ -121,15 +121,16 @@ async def submit_report(
 
 @router.get("", response_model=ReportListResponse)
 async def list_reports(
-    status: Optional[StatusEnum] = None,
+    status_filter: Optional[StatusEnum] = Query(None, alias="status"),
     severity: Optional[SeverityEnum] = None,
+    include_hidden: bool = False,
     limit: int = 100
 ):
     """Mendapatkan daftar laporan publik yang aktif (FR-10)"""
     reports = supabase_svc.get_reports(
-        status=status.value if status else None,
+        status=status_filter.value if status_filter else None,
         severity=severity.value if severity else None,
-        include_hidden=False,
+        include_hidden=include_hidden,
         limit=limit
     )
     return ReportListResponse(total=len(reports), items=reports)

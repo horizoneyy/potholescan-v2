@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, status, Response, Depends, Request
 from backend.app.models.schemas import LoginRequest, LoginResponse, UserCreate, UserResponse, RoleEnum
 from backend.app.core.security import (
@@ -149,14 +149,34 @@ async def delete_user(user_id: int, current_user: dict = Depends(get_current_use
 
 @router.post("/users", response_model=UserResponse, dependencies=[Depends(require_role(["admin"]))])
 async def create_user(payload: UserCreate, current_user: dict = Depends(get_current_user_from_cookie)):
+    pwd_hash = get_password_hash(payload.password)
+    role_val = payload.role.value if hasattr(payload.role, "value") else str(payload.role)
+
+    user_id = len(LOCAL_USERS) + 1
+    if supabase_svc.is_configured():
+        existing = supabase_svc.get_user_by_username(payload.username)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Username '{payload.username}' sudah dipakai."
+            )
+        created = supabase_svc.create_user(
+            username=payload.username,
+            password_hash=pwd_hash,
+            full_name=payload.full_name,
+            role=role_val
+        )
+        if created:
+            user_id = created["id"] if isinstance(created, dict) else created
+
     new_user = {
-        "id": len(LOCAL_USERS) + 1,
+        "id": user_id,
         "username": payload.username,
-        "password_hash": get_password_hash(payload.password),
+        "password_hash": pwd_hash,
         "full_name": payload.full_name,
         "role": payload.role,
         "is_active": True,
-        "created_at": "2026-11-16T20:00:00Z"
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
     LOCAL_USERS[payload.username] = new_user
     supabase_svc.log_audit(
@@ -164,6 +184,6 @@ async def create_user(payload: UserCreate, current_user: dict = Depends(get_curr
         action="CREATE_USER",
         target_entity="users",
         target_id=new_user["id"],
-        details=f"Membuat user baru: {payload.username} ({payload.role})"
+        details=f"Membuat user baru: {payload.username} ({role_val})"
     )
     return new_user

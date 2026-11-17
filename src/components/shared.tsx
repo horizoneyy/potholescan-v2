@@ -1,20 +1,29 @@
-import { useMemo, useState } from 'react'
-import { Download, EyeOff, FileText, Printer, X } from 'lucide-react'
-import { Card, SeverityBadge, StatusBadge } from './ui'
-import { STATUS_LABEL, todayIso, type Report, type Status } from '../data'
-import { getPdfDownloadUrl, getExcelDownloadUrl, updateReportStatusApi } from '../api'
-import { DEFAULT_ROAD_IMG } from './MapView'
+import { useMemo, useState } from "react";
+import { Download, EyeOff, FileText, Printer, X } from "lucide-react";
+import { Card, SeverityBadge, StatusBadge } from "./ui";
+import { STATUS_LABEL, todayIso, type Report, type Status } from "../data";
+import {
+  getPdfDownloadUrl,
+  getExcelDownloadUrl,
+  updateReportStatusApi,
+} from "../api";
+import { DEFAULT_ROAD_IMG } from "./MapView";
 
-const STATUSES: Status[] = ['BARU', 'DIVERIFIKASI', 'DALAM_PENANGANAN', 'SELESAI']
+const STATUSES: Status[] = [
+  "BARU",
+  "DIVERIFIKASI",
+  "DALAM_PENANGANAN",
+  "SELESAI",
+];
 
 export function ReportTable({
   rows,
   onOpen,
   readOnly = false,
 }: {
-  rows: Report[]
-  onOpen?: (r: Report) => void
-  readOnly?: boolean
+  rows: Report[];
+  onOpen?: (r: Report) => void;
+  readOnly?: boolean;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -31,26 +40,35 @@ export function ReportTable({
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={readOnly ? 4 : 5} className="px-5 py-14 text-center text-slate-500">
+              <td
+                colSpan={readOnly ? 4 : 5}
+                className="px-5 py-14 text-center text-slate-500"
+              >
                 Tidak ada laporan di daftar ini.
               </td>
             </tr>
           )}
           {rows.map((r) => (
-            <tr key={r.id} className="border-t border-line transition hover:bg-soft/60">
+            <tr
+              key={r.id}
+              className="border-t border-line transition hover:bg-soft/60"
+            >
               <td className="px-5 py-3">
                 <div className="flex items-center gap-3">
                   <img
                     src={r.annotated_img || r.img || DEFAULT_ROAD_IMG}
                     alt=""
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+                      (e.currentTarget as HTMLImageElement).src =
+                        DEFAULT_ROAD_IMG;
                     }}
                     className="size-12 rounded-xl bg-soft object-cover"
                   />
                   <div>
                     <div className="font-semibold">{r.street}</div>
-                    <div className="text-xs text-slate-500">#{r.id} · {r.date}</div>
+                    <div className="text-xs text-slate-500">
+                      #{r.id} · {r.date}
+                    </div>
                   </div>
                 </div>
               </td>
@@ -69,7 +87,7 @@ export function ReportTable({
                     onClick={() => onOpen(r)}
                     className="rounded-full border border-line px-4 py-1.5 text-xs font-semibold hover:bg-ink hover:text-white"
                   >
-                    {r.status === 'SELESAI' ? 'Info' : 'Ubah'}
+                    {r.status === "SELESAI" ? "Info" : "Ubah"}
                   </button>
                 </td>
               )}
@@ -78,7 +96,7 @@ export function ReportTable({
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 
 export function EditModal({
@@ -86,28 +104,43 @@ export function EditModal({
   onClose,
   onSave,
 }: {
-  report: Report
-  onClose: () => void
-  onSave: (id: number, patch: Partial<Report>, from: Status, hide: boolean) => void
+  report: Report;
+  onClose: () => void;
+  onSave: (
+    id: number,
+    patch: Partial<Report>,
+    from: Status,
+    hide: boolean,
+  ) => void;
 }) {
   const [status, setStatus] = useState<Status>(
-    report.status === 'PENDING_REVIEW' ? 'BARU' : report.status
-  )
-  const [notes, setNotes] = useState(report.notes ?? '')
-  const [hide, setHide] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const locked = report.status === 'SELESAI'
+    report.status === "PENDING_REVIEW" ? "BARU" : report.status,
+  );
+  const [notes, setNotes] = useState(report.notes ?? "");
+  const [hide, setHide] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const locked = report.status === "SELESAI";
 
   async function handleSave() {
-    setSaving(true)
+    setSaving(true);
     try {
       // Sinkronisasi status ke backend FastAPI & Supabase
-      await updateReportStatusApi(report.id, hide ? report.status : status, notes, hide)
+      await updateReportStatusApi(
+        report.id,
+        hide ? report.status : status,
+        notes,
+        hide,
+      );
     } catch (e) {
-      console.warn('API sync failed, using local update:', e)
+      console.warn("API sync failed, using local update:", e);
     } finally {
-      onSave(report.id, hide ? { hidden: true, notes } : { status, notes }, report.status, hide)
-      setSaving(false)
+      onSave(
+        report.id,
+        hide ? { hidden: true, notes } : { status, notes },
+        report.status,
+        hide,
+      );
+      setSaving(false);
     }
   }
 
@@ -139,7 +172,7 @@ export function EditModal({
           src={report.annotated_img || report.img || DEFAULT_ROAD_IMG}
           alt=""
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+            (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG;
           }}
           className="mt-4 h-44 w-full rounded-2xl bg-soft object-cover"
         />
@@ -186,7 +219,7 @@ export function EditModal({
             onClick={onClose}
             className="rounded-full border border-line px-5 py-2.5 text-sm font-semibold hover:bg-soft"
           >
-            {locked ? 'Tutup' : 'Batal'}
+            {locked ? "Tutup" : "Batal"}
           </button>
           {!locked && (
             <button
@@ -194,20 +227,24 @@ export function EditModal({
               onClick={handleSave}
               className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
             >
-              {saving ? 'Menyimpan…' : 'Simpan progres'}
+              {saving ? "Menyimpan…" : "Simpan progres"}
             </button>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function RekapPage({ reports }: { reports: Report[] }) {
-  const isos = reports.map((r) => r.iso).sort()
-  const [from, setFrom] = useState(isos[0] ?? todayIso())
-  const [to, setTo] = useState(todayIso() > (isos.at(-1) ?? '') ? todayIso() : isos.at(-1)!)
-  const [st, setSt] = useState<'ALL' | Status>('ALL')
+  const isos = reports.map((r) => r.iso).sort();
+  const [from, setFrom] = useState(isos[0] ?? todayIso());
+  const [to, setTo] = useState(
+    isos.length > 0 && (isos.at(-1) ?? "") > todayIso()
+      ? (isos.at(-1) ?? todayIso())
+      : todayIso(),
+  );
+  const [st, setSt] = useState<"ALL" | Status>("ALL");
 
   const rows = useMemo(
     () =>
@@ -216,22 +253,23 @@ export function RekapPage({ reports }: { reports: Report[] }) {
           !r.hidden &&
           r.iso >= from &&
           r.iso <= to &&
-          (st === 'ALL' || r.status === st)
+          (st === "ALL" || r.status === st),
       ),
-    [reports, from, to, st]
-  )
+    [reports, from, to, st],
+  );
 
   function downloadExcel() {
-    const url = getExcelDownloadUrl(from, to, st)
-    window.open(url, '_blank')
+    const url = getExcelDownloadUrl(from, to, st);
+    window.open(url, "_blank");
   }
 
   function downloadOfficialPdf() {
-    const url = getPdfDownloadUrl(from, to, st)
-    window.open(url, '_blank')
+    const url = getPdfDownloadUrl(from, to, st);
+    window.open(url, "_blank");
   }
 
-  const field = 'mt-1.5 rounded-xl border border-line bg-soft px-3 py-2.5 text-sm'
+  const field =
+    "mt-1.5 rounded-xl border border-line bg-soft px-3 py-2.5 text-sm";
 
   return (
     <div className="space-y-4">
@@ -258,11 +296,11 @@ export function RekapPage({ reports }: { reports: Report[] }) {
           Status
           <select
             value={st}
-            onChange={(e) => setSt(e.target.value as 'ALL' | Status)}
+            onChange={(e) => setSt(e.target.value as "ALL" | Status)}
             className={`${field} block`}
           >
             <option value="ALL">Semua</option>
-            {(['PENDING_REVIEW', ...STATUSES] as Status[]).map((s) => (
+            {(["PENDING_REVIEW", ...STATUSES] as Status[]).map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABEL[s]}
               </option>
@@ -320,7 +358,10 @@ export function RekapPage({ reports }: { reports: Report[] }) {
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-slate-500">
+                <td
+                  colSpan={5}
+                  className="px-5 py-12 text-center text-slate-500"
+                >
                   Tidak ada data pada rentang ini.
                 </td>
               </tr>
@@ -342,5 +383,5 @@ export function RekapPage({ reports }: { reports: Report[] }) {
         </table>
       </Card>
     </div>
-  )
+  );
 }

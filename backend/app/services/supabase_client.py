@@ -257,6 +257,33 @@ class SupabaseService:
         res = self.client.table("users").select("id, username, full_name, role, is_active, created_at").order("id").execute()
         return res.data or []
 
+    def create_user(self, username: str, password_hash: str, full_name: str, role: str) -> Optional[Dict[str, Any]]:
+        if not self.client:
+            return None
+        try:
+            res = self.client.table("users").insert({
+                "username": username,
+                "password_hash": password_hash,
+                "full_name": full_name,
+                "role": role,
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }).execute()
+            return res.data[0] if res.data else None
+        except Exception as e:
+            print(f"[ERR] Gagal membuat user di Supabase: {e}")
+            return None
+
+    def update_user_status(self, user_id: int, is_active: bool) -> bool:
+        if not self.client:
+            return False
+        try:
+            res = self.client.table("users").update({"is_active": is_active}).eq("id", user_id).execute()
+            return len(res.data) > 0 if res.data else True
+        except Exception as e:
+            print(f"[ERR] Gagal mengubah status user di Supabase: {e}")
+            return False
+
     def delete_user(self, user_id: int) -> bool:
         if not self.client:
             return False
@@ -277,3 +304,110 @@ class SupabaseService:
             }).execute()
         except Exception as e:
             print(f"[!] Gagal menulis audit log: {e}")
+
+    def get_system_settings(self) -> Dict[str, Any]:
+        """
+        Mengambil konfigurasi sistem dinamis dari tabel `system_settings` di Supabase.
+        Jika belum ada di DB atau klien offline, gunakan default config.
+        """
+        defaults = {
+            "confidence_threshold_min": settings.CONFIDENCE_THRESHOLD_MIN,
+            "confidence_threshold_publish": settings.CONFIDENCE_THRESHOLD_PUBLISH,
+            "proximity_radius_meters": settings.PROXIMITY_RADIUS_METERS
+        }
+        if not self.client:
+            return defaults
+
+        try:
+            res = self.client.table("system_settings").select("key, value").execute()
+            if res.data:
+                for row in res.data:
+                    k = row.get("key")
+                    v = row.get("value")
+                    if k == "confidence_threshold_min" and v is not None:
+                        try:
+                            val = float(v)
+                            defaults["confidence_threshold_min"] = val
+                            settings.CONFIDENCE_THRESHOLD_MIN = val
+                        except ValueError:
+                            pass
+                    elif k == "confidence_threshold_publish" and v is not None:
+                        try:
+                            val = float(v)
+                            defaults["confidence_threshold_publish"] = val
+                            settings.CONFIDENCE_THRESHOLD_PUBLISH = val
+                        except ValueError:
+                            pass
+                    elif k == "proximity_radius_meters" and v is not None:
+                        try:
+                            val = int(float(v))
+                            defaults["proximity_radius_meters"] = val
+                            settings.PROXIMITY_RADIUS_METERS = val
+                        except ValueError:
+                            pass
+        except Exception as e:
+            print(f"[!] Gagal mengambil system_settings dari Supabase: {e}")
+
+        return defaults
+
+    def update_system_settings(
+        self,
+        confidence_threshold_min: Optional[float] = None,
+        confidence_threshold_publish: Optional[float] = None,
+        proximity_radius_meters: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """
+        Memperbarui konfigurasi sistem dinamis ke tabel `system_settings` di Supabase
+        dan memperbarui singleton konfigurasi runtime in-memory.
+        """
+        if confidence_threshold_min is not None:
+            settings.CONFIDENCE_THRESHOLD_MIN = confidence_threshold_min
+            if self.client:
+                try:
+                    self.client.table("system_settings").upsert({
+                        "key": "confidence_threshold_min",
+                        "value": str(confidence_threshold_min),
+                        "description": "Ambang batas minimal agar deteksi diterima",
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }).execute()
+                except Exception as e:
+                    print(f"[ERR] Gagal upsert confidence_threshold_min ke Supabase: {e}")
+
+        if confidence_threshold_publish is not None:
+            settings.CONFIDENCE_THRESHOLD_PUBLISH = confidence_threshold_publish
+            if self.client:
+                try:
+                    self.client.table("system_settings").upsert({
+                        "key": "confidence_threshold_publish",
+                        "value": str(confidence_threshold_publish),
+                        "description": "Ambang batas keyakinan langsung tampil di peta publik",
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }).execute()
+                except Exception as e:
+                    print(f"[ERR] Gagal upsert confidence_threshold_publish ke Supabase: {e}")
+
+        if proximity_radius_meters is not None:
+            settings.PROXIMITY_RADIUS_METERS = proximity_radius_meters
+            if self.client:
+                try:
+                    self.client.table("system_settings").upsert({
+                        "key": "proximity_radius_meters",
+                        "value": str(proximity_radius_meters),
+                        "description": "Radius peringatan lubang aktif sekitar pengendara",
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }).execute()
+                except Exception as e:
+                    print(f"[ERR] Gagal upsert proximity_radius_meters ke Supabase: {e}")
+
+        return {
+            "confidence_threshold_min": settings.CONFIDENCE_THRESHOLD_MIN,
+            "confidence_threshold_publish": settings.CONFIDENCE_THRESHOLD_PUBLISH,
+            "proximity_radius_meters": settings.PROXIMITY_RADIUS_METERS
+        }
+
+    def sync_system_settings_to_config(self) -> None:
+        """
+        Sinkronisasi parameter ambang batas dari tabel `system_settings` ke memori config saat startup.
+        """
+        res = self.get_system_settings()
+        print(f"[+] Konfigurasi ambang AI disinkronkan dari Supabase: min={res['confidence_threshold_min']}, publish={res['confidence_threshold_publish']}, radius={res['proximity_radius_meters']}m")
