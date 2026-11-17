@@ -105,7 +105,8 @@ async def get_me(current_user: dict = Depends(get_current_user_from_cookie)):
     return {
         "username": current_user.get("sub"),
         "role": current_user.get("role"),
-        "user_id": current_user.get("user_id")
+        "user_id": current_user.get("user_id"),
+        "full_name": current_user.get("full_name") or ("Andi Daniel" if current_user.get("role") == "admin" else current_user.get("sub"))
     }
 
 @router.get("/users", dependencies=[Depends(require_role(["admin"]))])

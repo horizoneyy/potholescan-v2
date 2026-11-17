@@ -192,7 +192,7 @@ function Accounts({
           <label className="mt-3 block text-sm font-medium">Kata sandi<input type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} className={inp} /></label>
           <label className="mt-3 block text-sm font-medium">Peran<select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value as Role })} className={inp}><option value="petugas">Petugas</option><option value="admin">Admin</option></select></label>
           {err && <p className="mt-3 text-sm text-red-600">{err}</p>}
-          <button className="mt-5 w-full rounded-2xl bg-ink py-3 text-sm font-semibold text-white hover:bg-slate-800">Buat akun</button>
+          <button type="submit" className="mt-5 w-full rounded-2xl bg-ink py-3 text-sm font-semibold text-white hover:bg-slate-800">Buat akun</button>
         </form>
       </Card>
     </div>

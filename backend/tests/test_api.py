@@ -40,6 +40,14 @@ def test_auth_login_success():
     assert data["full_name"] == "Andi Daniel"
     assert "access_token" in data
 
+    # Verifikasi /api/auth/me mengembalikan identitas resmi Andi Daniel
+    me_res = client.get("/api/auth/me", headers={"Authorization": f"Bearer {data['access_token']}"})
+    assert me_res.status_code == 200
+    me_data = me_res.json()
+    assert me_data["username"] == "admin"
+    assert me_data["role"] == "admin"
+    assert me_data["full_name"] == "Andi Daniel"
+
 def test_upload_invalid_file_rejected():
     fake_exe_bytes = b"MZ\x90\x00\x03\x00\x00\x00"
     files = {"file": ("malicious.exe", io.BytesIO(fake_exe_bytes), "application/x-msdownload")}
