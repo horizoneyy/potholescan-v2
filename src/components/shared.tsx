@@ -1,20 +1,20 @@
-import { useMemo, useState } from 'react'
-import { Download, EyeOff, FileText, Printer, X } from 'lucide-react'
-import { Card, SeverityBadge, StatusBadge } from './ui'
-import { STATUS_LABEL, todayIso, type Report, type Status } from '../data'
-import { getPdfDownloadUrl, getExcelDownloadUrl, updateReportStatusApi } from '../api'
-import { DEFAULT_ROAD_IMG } from './MapView'
+import { useEffect, useMemo, useState } from "react";
+import { Download, EyeOff, FileText, Printer, X } from "lucide-react";
+import { Card, SeverityBadge, StatusBadge } from "./ui";
+import { STATUS_LABEL, todayIso, type Report, type Status } from "../data";
+import { getPdfDownloadUrl, getExcelDownloadUrl, updateReportStatusApi } from "../api";
+import { DEFAULT_ROAD_IMG } from "./MapView";
 
-const STATUSES: Status[] = ['BARU', 'DIVERIFIKASI', 'DALAM_PENANGANAN', 'SELESAI']
+const STATUSES: Status[] = ["BARU", "DIVERIFIKASI", "DALAM_PENANGANAN", "SELESAI"];
 
 export function ReportTable({
   rows,
   onOpen,
   readOnly = false,
 }: {
-  rows: Report[]
-  onOpen?: (r: Report) => void
-  readOnly?: boolean
+  rows: Report[];
+  onOpen?: (r: Report) => void;
+  readOnly?: boolean;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -44,22 +44,22 @@ export function ReportTable({
                     src={r.annotated_img || r.img || DEFAULT_ROAD_IMG}
                     alt=""
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+                      (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG;
                     }}
                     className="size-12 rounded-xl bg-soft object-cover"
                   />
                   <div>
                     <div className="font-semibold">{r.street}</div>
-                    <div className="text-xs text-slate-500">#{r.id} · {r.date}</div>
+                    <div className="text-xs text-slate-500">
+                      #{r.id} · {r.date}
+                    </div>
                   </div>
                 </div>
               </td>
               <td className="px-3">
                 <SeverityBadge s={r.severity} />
               </td>
-              <td className="px-3 font-display font-bold">
-                {Math.round(r.confidence * 100)}%
-              </td>
+              <td className="px-3 font-display font-bold">{Math.round(r.confidence * 100)}%</td>
               <td className="px-3">
                 <StatusBadge s={r.status} />
               </td>
@@ -69,7 +69,7 @@ export function ReportTable({
                     onClick={() => onOpen(r)}
                     className="rounded-full border border-line px-4 py-1.5 text-xs font-semibold hover:bg-ink hover:text-white"
                   >
-                    {r.status === 'SELESAI' ? 'Info' : 'Ubah'}
+                    {r.status === "SELESAI" ? "Info" : "Ubah"}
                   </button>
                 </td>
               )}
@@ -78,7 +78,7 @@ export function ReportTable({
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 
 export function EditModal({
@@ -86,28 +86,28 @@ export function EditModal({
   onClose,
   onSave,
 }: {
-  report: Report
-  onClose: () => void
-  onSave: (id: number, patch: Partial<Report>, from: Status, hide: boolean) => void
+  report: Report;
+  onClose: () => void;
+  onSave: (id: number, patch: Partial<Report>, from: Status, hide: boolean) => void;
 }) {
   const [status, setStatus] = useState<Status>(
-    report.status === 'PENDING_REVIEW' ? 'BARU' : report.status
-  )
-  const [notes, setNotes] = useState(report.notes ?? '')
-  const [hide, setHide] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const locked = report.status === 'SELESAI'
+    report.status === "PENDING_REVIEW" ? "BARU" : report.status,
+  );
+  const [notes, setNotes] = useState(report.notes ?? "");
+  const [hide, setHide] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const locked = report.status === "SELESAI";
 
   async function handleSave() {
-    setSaving(true)
+    setSaving(true);
     try {
       // Sinkronisasi status ke backend FastAPI & Supabase
-      await updateReportStatusApi(report.id, hide ? report.status : status, notes, hide)
+      await updateReportStatusApi(report.id, hide ? report.status : status, notes, hide);
     } catch (e) {
-      console.warn('API sync failed, using local update:', e)
+      console.warn("API sync failed, using local update:", e);
     } finally {
-      onSave(report.id, hide ? { hidden: true, notes } : { status, notes }, report.status, hide)
-      setSaving(false)
+      onSave(report.id, hide ? { hidden: true, notes } : { status, notes }, report.status, hide);
+      setSaving(false);
     }
   }
 
@@ -135,14 +135,16 @@ export function EditModal({
             <X className="size-4" />
           </button>
         </div>
+
         <img
           src={report.annotated_img || report.img || DEFAULT_ROAD_IMG}
-          alt=""
+          alt={report.street}
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG
+            (e.currentTarget as HTMLImageElement).src = DEFAULT_ROAD_IMG;
           }}
-          className="mt-4 h-44 w-full rounded-2xl bg-soft object-cover"
+          className="mt-4 h-40 w-full rounded-2xl bg-soft object-cover"
         />
+
         <label className="mt-4 block text-sm font-medium">
           Status penanganan
           <select
@@ -158,8 +160,9 @@ export function EditModal({
             ))}
           </select>
         </label>
+
         <label className="mt-3 block text-sm font-medium">
-          Catatan teknis perbaikan
+          Catatan penanganan
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -169,24 +172,27 @@ export function EditModal({
             className="mt-1.5 w-full resize-none rounded-xl border border-line bg-soft px-3 py-2.5 text-sm"
           />
         </label>
+
         {!locked && (
           <label className="mt-3 flex items-center gap-2.5 text-sm">
             <input
               type="checkbox"
               checked={hide}
               onChange={(e) => setHide(e.target.checked)}
-              className="size-4 accent-slate-900"
+              className="size-4 rounded"
             />
-            <EyeOff className="size-4 text-slate-500" />
-            Sembunyikan laporan ini (false positive)
+            <span className="text-slate-600">
+              Tandai sebagai positif palsu (sembunyikan dari peta)
+            </span>
           </label>
         )}
+
         <div className="mt-6 flex justify-end gap-2">
           <button
             onClick={onClose}
             className="rounded-full border border-line px-5 py-2.5 text-sm font-semibold hover:bg-soft"
           >
-            {locked ? 'Tutup' : 'Batal'}
+            {locked ? "Tutup" : "Batal"}
           </button>
           {!locked && (
             <button
@@ -194,44 +200,67 @@ export function EditModal({
               onClick={handleSave}
               className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
             >
-              {saving ? 'Menyimpan…' : 'Simpan progres'}
+              {saving ? "Menyimpan…" : "Simpan progres"}
             </button>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function RekapPage({ reports }: { reports: Report[] }) {
-  const isos = reports.map((r) => r.iso).sort()
-  const [from, setFrom] = useState(isos[0] ?? todayIso())
-  const [to, setTo] = useState(todayIso() > (isos.at(-1) ?? '') ? todayIso() : isos.at(-1)!)
-  const [st, setSt] = useState<'ALL' | Status>('ALL')
+  const isos = useMemo(
+    () =>
+      reports
+        .map((r) => r.iso)
+        .filter(Boolean)
+        .sort(),
+    [reports],
+  );
+  const [from, setFrom] = useState(isos[0] ?? todayIso());
+  const [to, setTo] = useState(
+    isos.length > 0
+      ? todayIso() > (isos.at(-1) ?? "")
+        ? todayIso()
+        : (isos.at(-1) ?? todayIso())
+      : todayIso(),
+  );
+  const [st, setSt] = useState<"ALL" | Status>("ALL");
+
+  // Sinkronisasi rentang tanggal dengan data laporan yang aktif
+  useEffect(() => {
+    if (isos.length > 0) {
+      if (!from || from > isos[0]) {
+        setFrom(isos[0]);
+      }
+      const maxIso = isos.at(-1) ?? todayIso();
+      const end = todayIso() > maxIso ? todayIso() : maxIso;
+      if (!to || to < end) {
+        setTo(end);
+      }
+    }
+  }, [isos]);
 
   const rows = useMemo(
     () =>
       reports.filter(
-        (r) =>
-          !r.hidden &&
-          r.iso >= from &&
-          r.iso <= to &&
-          (st === 'ALL' || r.status === st)
+        (r) => !r.hidden && r.iso >= from && r.iso <= to && (st === "ALL" || r.status === st),
       ),
-    [reports, from, to, st]
-  )
+    [reports, from, to, st],
+  );
 
   function downloadExcel() {
-    const url = getExcelDownloadUrl(from, to, st)
-    window.open(url, '_blank')
+    const url = getExcelDownloadUrl(from, to, st === "ALL" ? "SEMUA" : st);
+    window.open(url, "_blank");
   }
 
   function downloadOfficialPdf() {
-    const url = getPdfDownloadUrl(from, to, st)
-    window.open(url, '_blank')
+    const url = getPdfDownloadUrl(from, to, st === "ALL" ? "SEMUA" : st);
+    window.open(url, "_blank");
   }
 
-  const field = 'mt-1.5 rounded-xl border border-line bg-soft px-3 py-2.5 text-sm'
+  const field = "mt-1.5 rounded-xl border border-line bg-soft px-3 py-2.5 text-sm";
 
   return (
     <div className="space-y-4">
@@ -258,11 +287,11 @@ export function RekapPage({ reports }: { reports: Report[] }) {
           Status
           <select
             value={st}
-            onChange={(e) => setSt(e.target.value as 'ALL' | Status)}
+            onChange={(e) => setSt(e.target.value as "ALL" | Status)}
             className={`${field} block`}
           >
             <option value="ALL">Semua</option>
-            {(['PENDING_REVIEW', ...STATUSES] as Status[]).map((s) => (
+            {(["PENDING_REVIEW", ...STATUSES] as Status[]).map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABEL[s]}
               </option>
@@ -301,9 +330,7 @@ export function RekapPage({ reports }: { reports: Report[] }) {
             </h3>
           </div>
           <div className="text-right">
-            <div className="font-display text-5xl font-extrabold leading-none">
-              {rows.length}
-            </div>
+            <div className="font-display text-5xl font-extrabold leading-none">{rows.length}</div>
             <div className="text-xs text-slate-500">laporan</div>
           </div>
         </div>
@@ -342,5 +369,5 @@ export function RekapPage({ reports }: { reports: Report[] }) {
         </table>
       </Card>
     </div>
-  )
+  );
 }

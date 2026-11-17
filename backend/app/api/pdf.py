@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Query, Depends, Response
 from backend.app.core.security import require_role
 from backend.app.services.supabase_client import SupabaseService
@@ -15,36 +15,55 @@ async def export_pdf(
     status: Optional[str] = Query("SEMUA", description="Filter status atau SEMUA")
 ):
     """
-    Ekspor dokumen PDF resmi rekapitulasi penanganan kerusakan jalan dinas (FR-16).
+    Ekspor dokumen PDF resmi rekapitulasi penanganan kerusakan jalan dinas PUPR (FR-16).
     """
     # Ambil seluruh laporan aktif dari Supabase
     all_reports = supabase_svc.get_reports(include_hidden=False, limit=500)
-    
-    # Filter tanggal default
-    f_date = from_date or "2020-01-01"
-    t_date = to_date or "2099-12-31"
 
-    # Filter berdasarkan rentang tanggal dan status
+    # 1. Normalisasi status filter (mengakomodasi SEMUA, ALL, dan lowercase)
+    norm_status = None
+    if status and status.strip().upper() not in ("SEMUA", "ALL", ""):
+        norm_status = status.strip().upper()
+
+    # 2. Penentuan batas tanggal default dinamis jika parameter tanggal tidak dikirimkan
+    valid_dates = [
+        str(r.get("created_at", ""))[:10]
+        for r in all_reports
+        if r.get("created_at")
+    ]
+    min_date = min(valid_dates) if valid_dates else "2020-01-01"
+    max_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if valid_dates and max(valid_dates) > max_date:
+        max_date = max(valid_dates)
+
+    f_date = from_date.strip() if from_date and from_date.strip() else min_date
+    t_date = to_date.strip() if to_date and to_date.strip() else max_date
+
+    # 3. Filter berdasarkan rentang tanggal dan status
     filtered = []
     for r in all_reports:
         c_date = str(r.get("created_at", ""))[:10]
         if f_date <= c_date <= t_date:
-            if status == "SEMUA" or r.get("status") == status:
+            if not norm_status or r.get("status") == norm_status:
                 filtered.append(r)
 
-    # Jika filter menghasilkan list kosong namun data ada di DB, sertakan seluruh data agar PDF tidak kosong
-    if not filtered and all_reports:
-        filtered = all_reports
+    # 4. Fallback pengaman: jika parameter tanggal tidak dikirimkan dan filtered kosong padahal data ada di database
+    if not filtered and not from_date and not to_date and all_reports:
+        if norm_status:
+            filtered = [r for r in all_reports if r.get("status") == norm_status]
+        else:
+            filtered = all_reports
 
-    display_from = from_date or (str(filtered[0].get("created_at", ""))[:10] if filtered else "2026-01-01")
-    display_to = to_date or datetime.now().strftime("%Y-%m-%d")
+    display_from = from_date.strip() if from_date and from_date.strip() else min_date
+    display_to = to_date.strip() if to_date and to_date.strip() else max_date
+    status_label = norm_status or "SEMUA"
 
     # Buat dokumen PDF
     pdf_bytes = generate_reports_pdf(
         reports=filtered,
         from_date=display_from,
         to_date=display_to,
-        status_filter=status or "SEMUA"
+        status_filter=status_label
     )
 
     filename = f"rekap-resmi-potholescan-{display_from}_{display_to}.pdf"

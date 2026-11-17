@@ -161,22 +161,32 @@ def generate_reports_pdf(
     ]
     detail_data = [table_headers]
 
-    for r in reports[:150]:  # Batas wajar halaman rekap
-        dt_str = str(r.get("created_at", ""))[:10]
-        lat = round(float(r.get("latitude", 0)), 5)
-        lon = round(float(r.get("longitude", 0)), 5)
-        sev = str(r.get("max_severity", ""))
-        conf = f"{int(float(r.get('max_confidence', 0)) * 100)}%"
-        st = str(r.get("status", ""))
-
+    if not reports:
         detail_data.append([
-            Paragraph(f"#{r.get('id', '')}", cell_style),
-            Paragraph(dt_str, cell_style),
-            Paragraph(f"{lat}, {lon}", cell_style),
-            Paragraph(sev, cell_bold),
-            Paragraph(conf, cell_style),
-            Paragraph(st, cell_style)
+            Paragraph("-", cell_style),
+            Paragraph("-", cell_style),
+            Paragraph("Tidak ada data laporan pada filter ini", cell_style),
+            Paragraph("-", cell_style),
+            Paragraph("-", cell_style),
+            Paragraph("-", cell_style),
         ])
+    else:
+        for r in reports[:150]:  # Batas wajar halaman rekap
+            dt_str = str(r.get("created_at", ""))[:10]
+            lat = round(float(r.get("latitude", 0) or 0), 5)
+            lon = round(float(r.get("longitude", 0) or 0), 5)
+            sev = str(r.get("max_severity", "")).upper()
+            conf = f"{int(float(r.get('max_confidence', 0) or 0) * 100)}%"
+            st = str(r.get("status", "")).replace("_", " ").upper()
+
+            detail_data.append([
+                Paragraph(f"#{r.get('id', '')}", cell_style),
+                Paragraph(dt_str, cell_style),
+                Paragraph(f"{lat}, {lon}", cell_style),
+                Paragraph(sev, cell_bold),
+                Paragraph(conf, cell_style),
+                Paragraph(st, cell_style)
+            ])
 
     detail_table = Table(
         detail_data,

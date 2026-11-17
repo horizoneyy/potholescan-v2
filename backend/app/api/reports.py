@@ -28,7 +28,7 @@ def validate_image_magic_bytes(header: bytes) -> str:
     elif header.startswith(b"\x89PNG\r\n\x1a\n"):
         return "png"
     raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         detail="Berkas bukan citra JPEG/PNG yang valid. Sistem menolak berkas rusak/format palsu."
     )
 
@@ -49,7 +49,7 @@ async def submit_report(
     # 1. Validasi Ukuran Berkas (Maksimal 10 MB)
     if len(contents) > 10 * 1024 * 1024:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Ukuran berkas melebihi batas maksimal 10 MB."
         )
 
