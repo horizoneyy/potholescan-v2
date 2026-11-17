@@ -63,7 +63,7 @@ export function Admin({ user, users, reports, settings, logs, update, addUser, t
         <div className="p-5 sm:p-10">
           <header className="rise mb-8 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-widest text-amber-600">Panel administrator</div>
+              <div className="text-xs font-semibold uppercase tracking-widest text-amber-600">Panel administrator · {user.fullName || 'Andi Daniel'}</div>
               <h1 className="mt-1 text-5xl font-extrabold sm:text-6xl">{TITLE[page]}</h1>
             </div>
           </header>

@@ -141,12 +141,16 @@ export default function App() {
   }
 
   const toggleUser = (id: number) => {
-    const t = users.find((x) => x.id === id)!
+    const t = users.find((x) => x.id === id)
+    if (!t) return
     setUsers((p) => p.map((x) => (x.id === id ? { ...x, active: !x.active } : x)))
-    log(session!.username, 'TOGGLE_USER', 'users', `${t.username} ${t.active ? 'dinonaktifkan' : 'diaktifkan'}`)
+    if (session) {
+      log(session.username, 'TOGGLE_USER', 'users', `${t.username} ${t.active ? 'dinonaktifkan' : 'diaktifkan'}`)
+    }
   }
 
   const handleDeleteUser = async (id: number) => {
+    const target = users.find((x) => x.id === id)
     try {
       await deleteUserApi(id)
     } catch (e) {
@@ -154,7 +158,8 @@ export default function App() {
     }
     setUsers((p) => p.filter((x) => x.id !== id))
     if (session) {
-      log(session.username, 'DELETE_USER', 'users', `Akun staf ID #${id} dihapus`)
+      const name = target ? `${target.fullName} (@${target.username})` : `ID #${id}`
+      log(session.username, 'DELETE_USER', 'users', `Akun staf ${name} dihapus`)
     }
   }
 
