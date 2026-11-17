@@ -1,3 +1,14 @@
+import sys
+from pathlib import Path
+
+# Pastikan direktori root dan backend masuk ke sys.path agar impor 'backend.app...' selalu berhasil
+_current_file = Path(__file__).resolve()
+_backend_dir = _current_file.parent.parent
+_root_dir = _backend_dir.parent
+for _p in [str(_root_dir), str(_backend_dir)]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
