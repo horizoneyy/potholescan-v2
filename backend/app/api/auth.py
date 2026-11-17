@@ -167,7 +167,7 @@ async def create_user(payload: UserCreate, current_user: dict = Depends(get_curr
             role=role_val
         )
         if created:
-            user_id = created["id"]
+            user_id = created["id"] if isinstance(created, dict) else created
 
     new_user = {
         "id": user_id,

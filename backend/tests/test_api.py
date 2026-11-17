@@ -80,6 +80,8 @@ def test_staff_accounts_login():
         assert data["role"] == "petugas"
 
 def test_create_and_delete_user():
+    import uuid
+    test_uname = f"uji_{uuid.uuid4().hex[:6]}"
     # Login admin
     login_res = client.post("/api/auth/login", json={"username": "admin", "password": "admin123"})
     assert login_res.status_code == 200
@@ -89,7 +91,7 @@ def test_create_and_delete_user():
     create_res = client.post(
         "/api/auth/users",
         json={
-            "username": "petugas_uji",
+            "username": test_uname,
             "password": "password123",
             "full_name": "Petugas Uji Coba",
             "role": "petugas"
@@ -98,7 +100,7 @@ def test_create_and_delete_user():
     )
     assert create_res.status_code == 200
     new_user = create_res.json()
-    assert new_user["username"] == "petugas_uji"
+    assert new_user["username"] == test_uname
     user_id = new_user["id"]
 
     # Hapus user
