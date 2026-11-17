@@ -149,7 +149,7 @@ function Accounts({
           <thead className="text-[11px] uppercase tracking-widest text-slate-400"><tr><th className="px-5 py-3">Pengguna</th><th>Peran</th><th>Status</th><th className="pr-5 text-right">Aksi</th></tr></thead>
           <tbody>{users.map((u) => (
             <tr key={u.id} className="border-t border-line">
-              <td className="px-5 py-3"><div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-full bg-soft font-display font-bold">{u.fullName[0]}</div><div><div className="font-semibold">{u.fullName}</div><div className="text-xs text-slate-500">@{u.username}</div></div></div></td>
+              <td className="px-5 py-3"><div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-full bg-soft font-display font-bold">{(u.fullName?.[0] || u.username?.[0] || '?').toUpperCase()}</div><div><div className="font-semibold">{u.fullName || u.username}</div><div className="text-xs text-slate-500">@{u.username}</div></div></div></td>
               <td><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${u.role === 'admin' ? 'bg-ink text-white' : 'bg-soft'}`}>{u.role}</span></td>
               <td className={u.active ? 'text-emerald-600' : 'text-slate-400'}>{u.active ? 'Aktif' : 'Nonaktif'}</td>
               <td className="pr-5 text-right">

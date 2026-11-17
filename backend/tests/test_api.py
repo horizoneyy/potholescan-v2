@@ -36,6 +36,8 @@ def test_auth_login_success():
     data = res.json()
     assert data["success"] is True
     assert data["role"] == "admin"
+    assert data["user_id"] == 1
+    assert data["full_name"] == "Andi Daniel"
     assert "access_token" in data
 
 def test_upload_invalid_file_rejected():

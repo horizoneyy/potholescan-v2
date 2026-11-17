@@ -68,7 +68,12 @@ async def login(credentials: LoginRequest, response: Response):
 
     # Terbitkan token JWT
     access_token = create_access_token(
-        data={"sub": user["username"], "role": user["role"], "user_id": user["id"]}
+        data={
+            "sub": user["username"],
+            "role": user["role"],
+            "user_id": user["id"],
+            "full_name": user.get("full_name", "")
+        }
     )
 
     # Simpan di HTTP-Only Cookie yang aman
@@ -83,6 +88,7 @@ async def login(credentials: LoginRequest, response: Response):
 
     return LoginResponse(
         success=True,
+        user_id=user["id"],
         username=user["username"],
         full_name=user["full_name"],
         role=user["role"],

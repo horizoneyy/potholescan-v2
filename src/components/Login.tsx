@@ -31,11 +31,12 @@ export function Login({
     try {
       // 1. Autentikasi riil ke backend FastAPI (POST /api/auth/login)
       const data = await loginApi(u.trim(), p)
+      const matchedLocal = users.find((x) => x.username.toLowerCase() === data.username.toLowerCase())
       const authenticatedUser: User = {
-        id: data.user_id || 1,
+        id: data.user_id || matchedLocal?.id || (data.role === 'admin' ? 1 : 2),
         username: data.username,
         password: '',
-        fullName: data.full_name,
+        fullName: data.full_name || matchedLocal?.fullName || (data.role === 'admin' ? 'Andi Daniel' : data.username),
         role: data.role,
         active: true,
       }
