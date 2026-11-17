@@ -16,7 +16,7 @@ import { Public } from './components/Public'
 import { Staff } from './components/Staff'
 import { Admin } from './components/Admin'
 import { Login } from './components/Login'
-import { fetchReports, fetchSettingsApi, fetchUsersApi, deleteUserApi, logoutApi, updateSettingsApi } from './api'
+import { fetchReports, fetchSettingsApi, fetchUsersApi, deleteUserApi, createUserApi, logoutApi, updateSettingsApi } from './api'
 
 export default function App() {
   const [view, setView] = useState<'public' | 'login'>('public')
@@ -107,45 +107,83 @@ export default function App() {
     )
   }
 
-  const addUser = (u: { username: string; password: string; fullName: string; role: Role }) => {
+  const addUser = async (u: { username: string; password: string; fullName: string; role: Role }) => {
     if (!u.fullName.trim() || !u.username.trim() || u.password.length < 6)
       return 'Isi semua kolom; kata sandi minimal 6 karakter.'
-    if (users.some((x) => x.username === u.username.trim())) return 'Username sudah dipakai.'
+    if (users.some((x) => x.username.toLowerCase() === u.username.trim().toLowerCase()))
+      return 'Username sudah dipakai.'
+
+    let newId = Math.max(0, ...users.map((x) => x.id)) + 1
+    try {
+      const created = await createUserApi({
+        username: u.username.trim(),
+        password: u.password,
+        fullName: u.fullName.trim(),
+        role: u.role,
+      })
+      if (created?.id) newId = created.id
+    } catch (e: any) {
+      console.warn('Gagal menyimpan user ke server, fallback ke lokal:', e)
+    }
+
     setUsers((p) => [
       ...p,
-      { ...u, username: u.username.trim(), id: Math.max(...p.map((x) => x.id)) + 1, active: true },
+      {
+        ...u,
+        username: u.username.trim(),
+        fullName: u.fullName.trim(),
+        id: newId,
+        active: true,
+      },
     ])
-    log(session!.username, 'CREATE_USER', 'users', `Akun ${u.username.trim()} (${u.role}) dibuat`)
+    if (session) {
+      log(session.username, 'CREATE_USER', 'users', `Akun ${u.username.trim()} (${u.role}) dibuat`)
+    }
     return null
   }
 
   const toggleUser = (id: number) => {
-    const t = users.find((x) => x.id === id)!
+    const t = users.find((x) => x.id === id)
+    if (!t) return
     setUsers((p) => p.map((x) => (x.id === id ? { ...x, active: !x.active } : x)))
-    log(session!.username, 'TOGGLE_USER', 'users', `${t.username} ${t.active ? 'dinonaktifkan' : 'diaktifkan'}`)
+    if (session) {
+      log(session.username, 'TOGGLE_USER', 'users', `${t.username} ${t.active ? 'dinonaktifkan' : 'diaktifkan'}`)
+    }
   }
 
   const handleDeleteUser = async (id: number) => {
+    const target = users.find((x) => x.id === id)
+    if (target?.role === 'admin') {
+      alert('Akun Administrator tidak dapat dihapus.')
+      return
+    }
     try {
       await deleteUserApi(id)
-    } catch (e) {
-      console.warn('Gagal menghapus user di server, hapus secara lokal:', e)
+    } catch (e: any) {
+      console.warn('Gagal menghapus user di server:', e)
+      if (e?.message && e.message.includes('Administrator')) {
+        alert(e.message)
+        return
+      }
     }
     setUsers((p) => p.filter((x) => x.id !== id))
     if (session) {
-      log(session.username, 'DELETE_USER', 'users', `Akun staf ID #${id} dihapus`)
+      const name = target ? `${target.fullName} (@${target.username})` : `ID #${id}`
+      log(session.username, 'DELETE_USER', 'users', `Akun staf ${name} dihapus`)
     }
   }
 
   const saveSettings = (s: Settings) => {
     setSettings(s)
     updateSettingsApi(s).catch(() => {})
-    log(
-      session!.username,
-      'UPDATE_SETTING',
-      'system_settings',
-      `min ${s.min.toFixed(2)}, publish ${s.publish.toFixed(2)}, radius ${s.radius} m`
-    )
+    if (session) {
+      log(
+        session.username,
+        'UPDATE_SETTING',
+        'system_settings',
+        `min ${s.min.toFixed(2)}, publish ${s.publish.toFixed(2)}, radius ${s.radius} m`
+      )
+    }
   }
 
   const logout = () => {

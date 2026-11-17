@@ -98,6 +98,7 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     success: bool
+    user_id: Optional[int] = None
     username: str
     full_name: str
     role: RoleEnum

@@ -203,7 +203,7 @@ export function Public({
         const confidence = +(0.45 + Math.random() * 0.5).toFixed(2)
         const severity: Severity = confidence > 0.8 ? 'BERAT' : confidence > 0.6 ? 'SEDANG' : 'RINGAN'
         const status = confidence >= settings.publish ? 'BARU' : 'PENDING_REVIEW'
-        const id = Math.max(...reports.map((r) => r.id)) + 1
+        const id = Math.max(0, ...reports.map((r) => r.id)) + 1
         const r: Result = {
           severity,
           confidence,
