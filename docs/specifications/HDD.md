@@ -1,10 +1,11 @@
 # HIGH-LEVEL DESIGN DOCUMENT (HDD) / SOFTWARE DESIGN DOCUMENTATION (SDD)
+
 # SISTEM DETEKSI KERUSAKAN JALAN (POTHOLESCAN)
 
 **Document Version:** 1.0 (Definitive Edition)  
 **Status:** Approved for Development  
 **Product:** PotholeScan MVP Platform  
-**Target Architecture:** FastAPI + YOLOv8 + Supabase Cloud (PostgreSQL + PostGIS & Storage) + React/Leaflet  
+**Target Architecture:** FastAPI + YOLOv8 + Supabase Cloud (PostgreSQL + PostGIS & Storage) + React/Leaflet
 
 ---
 
@@ -29,6 +30,7 @@
 ## 1. Prinsip Desain & Arsitektur Sistem Terintegrasi
 
 ### 1.1 Prinsip Desain Utama
+
 1. **Separation of Concerns (SoC):** Memisahkan dengan tegas antara layer antarmuka pengguna (React), layer API & inferensi numerik (FastAPI + YOLOv8), serta layer persistensi cloud terkelola (**Supabase PostgreSQL & Storage**).
 2. **Stateless Backend:** Server backend FastAPI tidak menyimpan sesi di memori lokal; autentikasi dikelola dengan token JWT kriptografis yang diverifikasi pada setiap request.
 3. **Optimized Cloud Storage:** Berkas biner foto berukuran besar disimpan langsung pada **Supabase Storage**, sedangkan basis data PostgreSQL hanya mengelola metadata tekstual, koordinat spasial, dan URL CDN.
@@ -38,7 +40,7 @@
 ```mermaid
 flowchart TD
     Client["Klien Web: Pengendara / Petugas / Admin (Browser & HP)"]
-    
+
     subgraph FrontendApp ["Frontend Application Layer (Vite + React 18+)"]
         UI_Home["Halaman Beranda & Kamera Pelaporan"]
         UI_Map["Komponen Peta Interaktif (React-Leaflet)"]
@@ -51,7 +53,7 @@ flowchart TD
         RouteReport["/api/reports (Unggah, List, Detail)"]
         RouteGeo["/api/nearby (Kueri Proksimitas PostGIS)"]
         RoutePDF["/api/reports/pdf (Export Rekapitulasi)"]
-        
+
         subgraph DomainServices ["Domain Services Layer"]
             AuthService["Auth & Permission Service"]
             GeoService["EXIF Parser & PostGIS Bridge"]
@@ -69,7 +71,7 @@ flowchart TD
 
     Client -->|HTTPS| FrontendApp
     FrontendApp -->|REST JSON / Multipart| BackendServer
-    
+
     RouteAuth --> AuthService
     RouteReport --> InferenceService
     RouteReport --> GeoService
@@ -89,10 +91,11 @@ flowchart TD
 ## 2. Dekomposisi Komponen & Alur Data
 
 ### 2.1 Alur Data Pelaporan Utama (Warga $\to$ AI $\to$ Supabase)
+
 1. **Pengunggahan:** Warga memilih atau memotret kerusakan jalan via antarmuka React. Berkas dikirimkan ke `POST /api/reports` bersama koordinat peramban (jika ada).
-2. **Validasi & Ekstraksi Lokasi:** FastAPI memvalidasi integritas berkas (*magic bytes*). `GeoService` mengekstrak koordinat GPS dari tag EXIF; jika tidak ada, menggunakan geolokasi peramban atau pin manual.
-3. **Eksekusi AI YOLOv8:** Citra di-*resize* ke $640 \times 640$ dan diinferensi. Model mendeteksi kelas `pothole` dan `crack`, memfilter deteksi dengan keyakinan $\ge 0.25$, serta menghasilkan citra beranotasi kotak pembatas.
-4. **Kalkulasi Keparahan:** Sistem menghitung rasio luas ($R_{\text{area}}$) untuk lubang dan rasio bentang ($R_{\text{span}}$) untuk retak, lalu menentukan keparahan laporan (*worst-case escalation*).
+2. **Validasi & Ekstraksi Lokasi:** FastAPI memvalidasi integritas berkas (_magic bytes_). `GeoService` mengekstrak koordinat GPS dari tag EXIF; jika tidak ada, menggunakan geolokasi peramban atau pin manual.
+3. **Eksekusi AI YOLOv8:** Citra di-_resize_ ke $640 \times 640$ dan diinferensi. Model mendeteksi kelas `pothole` dan `crack`, memfilter deteksi dengan keyakinan $\ge 0.25$, serta menghasilkan citra beranotasi kotak pembatas.
+4. **Kalkulasi Keparahan:** Sistem menghitung rasio luas ($R_{\text{area}}$) untuk lubang dan rasio bentang ($R_{\text{span}}$) untuk retak, lalu menentukan keparahan laporan (_worst-case escalation_).
 5. **Unggah ke Supabase Storage:** Server mengunggah berkas foto asli dan foto beranotasi ke bucket `potholescan-media/original/` dan `potholescan-media/annotated/`.
 6. **Persistensi ke Supabase PostgreSQL:** Metadata laporan, koordinat titik PostGIS (`ST_SetSRID(ST_MakePoint(lon, lat), 4326)`), keparahan, serta daftar kotak deteksi dicatat ke tabel `reports` dan `detections`.
 7. **Penyaringan Visibilitas:** Jika keyakinan $\ge 0.65$, laporan berstatus `BARU` (langsung tampil di peta). Jika $0.25 - 0.64$, laporan berstatus `PENDING_REVIEW` (antrean kurasi petugas).
@@ -159,33 +162,33 @@ flowchart TD
     Start([Mulai]) --> BukaWeb[Buka Aplikasi Web PotholeScan]
     BukaWeb --> PilihFoto[Pilih / Ambil Foto Kerusakan Jalan]
     PilihFoto --> KirimFoto[Kirim Foto ke Endpoint /api/reports]
-    
+
     KirimFoto --> ValidasiBerkas{Berkas Valid & <= 10MB?}
     ValidasiBerkas -- Tidak --> TolakFile[Tampilkan Pesan Galat Format]
     TolakFile --> PilihFoto
-    
+
     ValidasiBerkas -- Ya --> CekEXIF{Tag EXIF GPS Ada?}
     CekEXIF -- Ya --> AmbilEXIF[Ekstraksi Lat/Lon dari EXIF]
     CekEXIF -- Tidak --> CekBrowserGPS{Izin Lokasi Browser Diberikan?}
     CekBrowserGPS -- Ya --> AmbilBrowserGPS[Ambil Lat/Lon dari Peramban]
     CekBrowserGPS -- Tidak --> GeserPin[Pengguna Menentukan Pin Manual di Peta]
-    
+
     AmbilEXIF --> EksekusiYOLO[Jalankan Inferensi YOLOv8 di Server]
     AmbilBrowserGPS --> EksekusiYOLO
     GeserPin --> EksekusiYOLO
-    
+
     EksekusiYOLO --> AdaDeteksi{Ada Objek Kerusakan >= 0.25?}
     AdaDeteksi -- Tidak --> TampilNormal[Tampilkan Pesan: Jalan Terpantau Normal]
     TampilNormal --> Selesai([Selesai])
-    
+
     AdaDeteksi -- Ya --> HitungKeparahan[Kalkulasi Rasio Luas & Klasifikasi Keparahan]
     HitungKeparahan --> UnggahStorage[Unggah Foto Asli & Anotasi ke Supabase Storage]
     UnggahStorage --> SimpanPostgres[Simpan Laporan & Koordinat PostGIS ke Supabase DB]
-    
+
     SimpanPostgres --> CekConf{Confidence Tertinggi >= 0.65?}
     CekConf -- Ya --> StatusPublik[Status = BARU, Muncul di Peta Publik]
     CekConf -- Tidak --> StatusPending[Status = PENDING_REVIEW, Masuk Antrean Petugas]
-    
+
     StatusPublik --> TampilHasil[Tampilkan Visualisasi Hasil & Peringatan 500m]
     StatusPending --> TampilHasil
     TampilHasil --> Selesai
@@ -201,22 +204,22 @@ flowchart TD
     LoginP --> CekKredensial{Kredensial Valid?}
     CekKredensial -- Tidak --> GagalLogin[Tampilkan Pesan Kesalahan]
     GagalLogin --> LoginP
-    
+
     CekKredensial -- Ya --> MasukDashboard[Buka Dashboard Operasional]
     MasukDashboard --> PilihMenu{Pilih Tindakan}
-    
+
     PilihMenu --> ReviewPending[Buka Tab Antrean Pending Review]
     ReviewPending --> Keputusan{Laporan Nyata / Valid?}
     Keputusan -- Ya --> Terbitkan[Ubah Status ke BARU, Publikasikan ke Peta]
     Keputusan -- Tidak --> Sembunyikan[Tandai is_hidden = true / False Positive]
-    
+
     PilihMenu --> UpdatePekerjaan[Pilih Laporan Aktif di Lapangan]
     UpdatePekerjaan --> GantiStatus[Ubah Status: DIVERIFIKASI / DALAM_PENANGANAN / SELESAI]
     GantiStatus --> TulisCatatan[Simpan Catatan Teknis & Rekam Audit Log]
-    
+
     PilihMenu --> CetakRekap[Pilih Rentang Tanggal Rekapitulasi]
     CetakRekap --> GeneratePDF[Unduh Berkas Laporan Resmi PDF]
-    
+
     Terbitkan --> SelesaiP([Selesai])
     Sembunyikan --> SelesaiP
     TulisCatatan --> SelesaiP
@@ -243,13 +246,13 @@ sequenceDiagram
     Warga->>FE: Pilih foto jalan & tekan "Lapor Kerusakan"
     FE->>API: POST /api/reports (multipart: file, browser_lat, browser_lon)
     API->>API: Validasi tipe MIME biner & ukuran (<= 10MB)
-    
+
     API->>API: Ekstraksi koordinat (EXIF GPS -> Browser GPS -> Pin)
     API->>AI: detect_damage(image_matrix)
     AI->>AI: Forward pass YOLOv8 (640x640)
     AI->>AI: Filter confidence >= 0.25 & Hitung severity matematis
     AI-->>API: Return (detections, annotated_image, max_severity, max_conf)
-    
+
     alt Tidak Ada Kerusakan Terdeteksi
         API-->>FE: HTTP 200 {status: "no_damage_detected"}
         FE-->>Warga: Tampilkan: "Tidak ditemukan kerusakan jalan"
@@ -258,15 +261,15 @@ sequenceDiagram
         SupaSDK->>SupaStore: PUT /object/potholescan-media/original/UUID.jpg
         SupaSDK->>SupaStore: PUT /object/potholescan-media/annotated/UUID_ann.jpg
         SupaStore-->>SupaSDK: Return public_urls
-        
+
         API->>SupaSDK: insert_report(lat, lon, severity, max_conf, public_urls)
         SupaSDK->>SupaDB: INSERT INTO reports & detections (dengan ST_MakePoint)
         SupaDB-->>SupaSDK: Report ID berhasil dibuat
-        
+
         API->>SupaSDK: query_nearby_potholes(lat, lon, radius=500)
         SupaSDK->>SupaDB: SELECT COUNT(*) WHERE ST_DWithin(geom, ST_MakePoint(lon, lat)::geography, 500)
         SupaDB-->>SupaSDK: Return nearby_count
-        
+
         API-->>FE: HTTP 201 {report_id, urls, severity, nearby_warnings: count}
         FE->>FE: Tambahkan penanda baru ke peta Leaflet
         FE-->>Warga: Tampilkan hasil deteksi & peringatan lubang sekitar
@@ -294,7 +297,7 @@ sequenceDiagram
     Auth->>Auth: Terbitkan JWT token (HS256)
     Auth-->>FE: Set HTTP-Only Cookie + JSON User Role
     FE-->>Petugas: Alihkan ke Dashboard Kerja Petugas
-    
+
     Petugas->>FE: Klik "Verifikasi Laporan" pada antrean
     FE->>API: PATCH /api/reports/{id}/status {new_status: 'DIVERIFIKASI', notes: 'Valid'}
     API->>API: Validasi klaim token JWT dari Cookie
@@ -443,7 +446,7 @@ classDiagram
 
 ## 4. Desain Basis Data Relasional Supabase PostgreSQL + PostGIS
 
-Berikut adalah DDL SQL lengkap yang siap dieksekusi pada *SQL Editor* Supabase:
+Berikut adalah DDL SQL lengkap yang siap dieksekusi pada _SQL Editor_ Supabase:
 
 ```sql
 -- 1. Mengaktifkan ekstensi geospasial PostGIS
@@ -556,12 +559,14 @@ ON CONFLICT (key) DO NOTHING;
 ## 5. Desain Antarmuka Pemrograman Aplikasi (REST API Specification)
 
 ### 5.1 `POST /api/reports`
+
 - **Akses:** Publik (Rate Limiting: 5 req/menit per IP).
 - **Request:** `multipart/form-data`
   - `file`: Berkas foto biner (JPEG/PNG $\le 10\text{ MB}$).
   - `latitude`: Float (opsional).
   - `longitude`: Float (opsional).
 - **Response (HTTP 201 Created):**
+
 ```json
 {
   "success": true,
@@ -581,7 +586,7 @@ ON CONFLICT (key) DO NOTHING;
       "class_name": "pothole",
       "confidence": 0.89,
       "severity": "BERAT",
-      "bbox": [0.42, 0.58, 0.35, 0.30]
+      "bbox": [0.42, 0.58, 0.35, 0.3]
     }
   ],
   "nearby_unresolved_count": 3
@@ -589,9 +594,11 @@ ON CONFLICT (key) DO NOTHING;
 ```
 
 ### 5.2 `GET /api/reports`
+
 - **Akses:** Publik.
 - **Query Params:** `severity` (opsional), `limit` (default 100).
 - **Response (HTTP 200 OK):**
+
 ```json
 {
   "total": 65,
@@ -610,13 +617,15 @@ ON CONFLICT (key) DO NOTHING;
 ```
 
 ### 5.3 `GET /api/nearby`
+
 - **Akses:** Publik.
 - **Query Params:** `lat` (float), `lon` (float), `radius_m` (default 500).
 - **Implementasi:** Mengeksekusi fungsi PostGIS `ST_DWithin`.
 - **Response (HTTP 200 OK):**
+
 ```json
 {
-  "center": {"lat": -6.208763, "lon": 106.845599},
+  "center": { "lat": -6.208763, "lon": 106.845599 },
   "radius_meters": 500,
   "unresolved_damages_count": 3,
   "highest_severity": "BERAT"
@@ -624,15 +633,18 @@ ON CONFLICT (key) DO NOTHING;
 ```
 
 ### 5.4 `POST /api/auth/login`
+
 - **Akses:** Publik.
 - **Request Body (JSON):** `{"username": "petugas01", "password": "password_aman"}`
-- **Response:** Mengatur *HTTP-Only Cookie* `access_token` dan mengembalikan data peran (`role`).
+- **Response:** Mengatur _HTTP-Only Cookie_ `access_token` dan mengembalikan data peran (`role`).
 
 ### 5.5 `PATCH /api/reports/{id}/status`
+
 - **Akses:** Privat (Petugas / Admin).
 - **Request Body (JSON):** `{"new_status": "DALAM_PENANGANAN", "notes": "Armada tambal meluncur"}`
 
 ### 5.6 `GET /api/reports/pdf`
+
 - **Akses:** Privat (Petugas / Admin).
 - **Query Params:** `from_date`, `to_date`, `status` (opsional).
 - **Response:** Biner `application/pdf` berkas rekapitulasi dinas.
@@ -642,6 +654,7 @@ ON CONFLICT (key) DO NOTHING;
 ## 6. Desain Antarmuka Pengguna (UI Wireframe Blueprint)
 
 ### 6.1 Antarmuka Pelaporan Cepat Publik
+
 ```text
 +-------------------------------------------------------------+
 |  [Logo] POTHOLESCAN - Pantau Jalan PUPR           [Login]   |
@@ -669,6 +682,7 @@ ON CONFLICT (key) DO NOTHING;
 ```
 
 ### 6.2 Antarmuka Dashboard Kerja Petugas Dinas
+
 ```text
 +-------------------------------------------------------------+
 |  POTHOLESCAN PETUGAS | Staf: Budi Santoso         [Logout]  |
@@ -694,7 +708,9 @@ ON CONFLICT (key) DO NOTHING;
 ## 7. Desain Keamanan, Error Handling & Supabase RLS
 
 ### 7.1 Kebijakan Supabase Row Level Security (RLS)
+
 Untuk melindungi basis data dari akses tidak sah:
+
 ```sql
 -- Aktifkan RLS pada tabel reports
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
@@ -714,24 +730,26 @@ WITH CHECK (true);
 ```
 
 ### 7.2 Penanganan Galat Sistem (Error Handling)
-- **File Corrupt / Invalid MIME:** Mengembalikan HTTP 422 dengan pesan: *"Berkas bukan citra JPEG/PNG yang valid"*.
+
+- **File Corrupt / Invalid MIME:** Mengembalikan HTTP 422 dengan pesan: _"Berkas bukan citra JPEG/PNG yang valid"_.
 - **Rate Limit Exceeded:** Mengembalikan HTTP 429 dengan header `Retry-After: 60`.
-- **Kegagalan Jaringan Supabase:** Sistem menangkap *timeout exception* dan mengembalikan status HTTP 503 dengan log kesalahan tercatat rapi.
+- **Kegagalan Jaringan Supabase:** Sistem menangkap _timeout exception_ dan mengembalikan status HTTP 503 dengan log kesalahan tercatat rapi.
 
 ---
 
 ## 8. Strategi Deployment & Analisis Trade-off Arsitektur
 
 ### 8.1 Deployment Stack (Paved Path)
+
 - **Frontend SPA:** Di-deploy ke Vercel / Netlify / Nginx Statis.
 - **Backend API:** Di-deploy pada VPS berbasis Linux (Ubuntu 22.04 LTS / 24.04 LTS) yang menjalankan Python 3.11, FastAPI, Uvicorn, dan model YOLOv8.
 - **Database & Storage:** Dikelola sepenuhnya oleh **Supabase Cloud Managed Services**.
 
 ### 8.2 Analisis Keputusan Desain & Trade-offs (Arsitektur Kompromi)
 
-| Keputusan Desain | Keuntungan Utama | Kompromi / Trade-off | Strategi Mitigasi |
-| :--- | :--- | :--- | :--- |
-| **Supabase PostgreSQL + PostGIS (menggantikan SQLite)** | Kueri geospasial native (`ST_DWithin`), indeks GiST super cepat, konkurensi multi-pengguna tanpa batas. | Membutuhkan koneksi internet dan manajemen kredensial API cloud. | Kunci *Service Role* disimpan aman di server backend, query dioptimalkan dengan indeks. |
-| **Supabase Storage (menggantikan Disk Lokal Server)** | Server backend tetap ringan tanpa risiko kehabisan kapasitas harddisk (*disk exhaustion*); aset dilayani CDN global. | Ada kuota bandwidth dan limit ukuran berkas pada tier gratis. | Citra dikompresi sebelum diunggah; batas ukuran citra dibatasi $\le 10\text{ MB}$. |
-| **Model YOLOv8 di Server FastAPI (bukan Edge/Mobile)** | Warga tidak dibebani unduhan file bobot AI di HP; inferensi konsisten di semua perangkat. | Server menanggung beban komputasi CPU/GPU saat ada unggahan massal. | Diterapkan *rate limiting* 5 req/menit dan model dioptimalkan ke varian Nano/Small. |
-| **Visibilitas Bertingkat (Confidence Tiering)** | Peta publik bersih dari deteksi keliru (*false positive*); laporan jelas langsung terbit tanpa tertahan antrean. | Petugas harus secara berkala memeriksa antrean *Pending Review*. | Disediakan tab antrean khusus dan notifikasi visual pada dashboard petugas. |
+| Keputusan Desain                                        | Keuntungan Utama                                                                                                     | Kompromi / Trade-off                                                | Strategi Mitigasi                                                                       |
+| :------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------ | :-------------------------------------------------------------------------------------- |
+| **Supabase PostgreSQL + PostGIS (menggantikan SQLite)** | Kueri geospasial native (`ST_DWithin`), indeks GiST super cepat, konkurensi multi-pengguna tanpa batas.              | Membutuhkan koneksi internet dan manajemen kredensial API cloud.    | Kunci _Service Role_ disimpan aman di server backend, query dioptimalkan dengan indeks. |
+| **Supabase Storage (menggantikan Disk Lokal Server)**   | Server backend tetap ringan tanpa risiko kehabisan kapasitas harddisk (_disk exhaustion_); aset dilayani CDN global. | Ada kuota bandwidth dan limit ukuran berkas pada tier gratis.       | Citra dikompresi sebelum diunggah; batas ukuran citra dibatasi $\le 10\text{ MB}$.      |
+| **Model YOLOv8 di Server FastAPI (bukan Edge/Mobile)**  | Warga tidak dibebani unduhan file bobot AI di HP; inferensi konsisten di semua perangkat.                            | Server menanggung beban komputasi CPU/GPU saat ada unggahan massal. | Diterapkan _rate limiting_ 5 req/menit dan model dioptimalkan ke varian Nano/Small.     |
+| **Visibilitas Bertingkat (Confidence Tiering)**         | Peta publik bersih dari deteksi keliru (_false positive_); laporan jelas langsung terbit tanpa tertahan antrean.     | Petugas harus secara berkala memeriksa antrean _Pending Review_.    | Disediakan tab antrean khusus dan notifikasi visual pada dashboard petugas.             |

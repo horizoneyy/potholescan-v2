@@ -19,7 +19,9 @@ pip install -r requirements.txt
 ```
 
 ### Rekomendasi Khusus GPU NVIDIA GeForce RTX 4050 (CUDA)
+
 Untuk memastikan PyTorch memanfaatkan GPU RTX 4050 secara maksimal, pasang PyTorch CUDA:
+
 ```powershell
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 ```
@@ -41,9 +43,11 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 ## 3. Menjalankan Server Backend API
 
 Pastikan virtual environment aktif:
+
 ```powershell
 uvicorn app.main:app --reload --port 8000
 ```
+
 - Dokumentasi Interaktif Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Health Check: [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
@@ -51,25 +55,30 @@ uvicorn app.main:app --reload --port 8000
 
 ## 4. Pipeline Dataset & Pelatihan Model Lokal (GPU RTX 4050)
 
-*Catatan: Seluruh dataset pelatihan HANYA disimpan di komputer lokal Anda dan TIDAK PERNAH dikirim ke Supabase.*
+_Catatan: Seluruh dataset pelatihan HANYA disimpan di komputer lokal Anda dan TIDAK PERNAH dikirim ke Supabase._
 
 ### Langkah A: Unduh Dataset Kaggle (Otomatis)
+
 ```powershell
 python scripts/download_kaggle_dataset.py
 ```
 
 ### Langkah B: Pemrosesan Label & Partisi Data (70/20/10)
+
 ```powershell
 python scripts/prepare_dataset.py
 ```
 
 ### Langkah C: Pelatihan YOLOv8 Lokal dengan Akselerasi CUDA
+
 ```powershell
 python scripts/train_local.py
 ```
+
 Model terbaik otomatis tersimpan ke `backend/weights/best.pt`.
 
 ### Langkah D: Evaluasi Metrik & Benchmark Latensi
+
 ```powershell
 python scripts/evaluate_model.py
 ```

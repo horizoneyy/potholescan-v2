@@ -1,22 +1,22 @@
-import { useMemo, useState } from 'react'
-import { Download, EyeOff, FileText, Maximize2, Printer, X } from 'lucide-react'
-import { Card, SeverityBadge, StatusBadge } from './ui'
-import { STATUS_LABEL, todayIso, type Report, type Status } from '../data'
-import { getPdfDownloadUrl, getExcelDownloadUrl, updateReportStatusApi } from '../api'
-import { DEFAULT_ROAD_IMG } from './MapView'
+import { useMemo, useState } from "react";
+import { Download, EyeOff, FileText, Maximize2, Printer, X } from "lucide-react";
+import { Card, SeverityBadge, StatusBadge } from "./ui";
+import { STATUS_LABEL, todayIso, type Report, type Status } from "../data";
+import { getPdfDownloadUrl, getExcelDownloadUrl, updateReportStatusApi } from "../api";
+import { DEFAULT_ROAD_IMG } from "./MapView";
 
-const STATUSES: Status[] = ['BARU', 'DIVERIFIKASI', 'DALAM_PENANGANAN', 'SELESAI']
+const STATUSES: Status[] = ["BARU", "DIVERIFIKASI", "DALAM_PENANGANAN", "SELESAI"];
 
 export function ReportTable({
   rows,
   onOpen,
   readOnly = false,
 }: {
-  rows: Report[]
-  onOpen?: (r: Report) => void
-  readOnly?: boolean
+  rows: Report[];
+  onOpen?: (r: Report) => void;
+  readOnly?: boolean;
 }) {
-  const [preview, setPreview] = useState<Report | null>(null)
+  const [preview, setPreview] = useState<Report | null>(null);
 
   return (
     <div className="overflow-x-auto">
@@ -27,13 +27,20 @@ export function ReportTable({
             <th className="px-3 font-semibold">Keparahan</th>
             <th className="px-3 font-semibold">Keyakinan</th>
             <th className="px-3 font-semibold">Status</th>
-            {onOpen ? <th className="px-5 text-right font-semibold">Aksi</th> : !readOnly && <th className="px-5" />}
+            {onOpen ? (
+              <th className="px-5 text-right font-semibold">Aksi</th>
+            ) : (
+              !readOnly && <th className="px-5" />
+            )}
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={onOpen || !readOnly ? 5 : 4} className="px-5 py-14 text-center text-slate-500">
+              <td
+                colSpan={onOpen || !readOnly ? 5 : 4}
+                className="px-5 py-14 text-center text-slate-500"
+              >
                 Tidak ada laporan di daftar ini.
               </td>
             </tr>
@@ -51,12 +58,12 @@ export function ReportTable({
                       src={r.annotated_img || r.img || DEFAULT_ROAD_IMG}
                       alt=""
                       onError={(e) => {
-                        const target = e.currentTarget as HTMLImageElement
+                        const target = e.currentTarget as HTMLImageElement;
                         if (r.img && target.src !== r.img && target.src !== DEFAULT_ROAD_IMG) {
-                          target.src = r.img
+                          target.src = r.img;
                         } else if (target.src !== DEFAULT_ROAD_IMG) {
-                          target.onerror = null
-                          target.src = DEFAULT_ROAD_IMG
+                          target.onerror = null;
+                          target.src = DEFAULT_ROAD_IMG;
                         }
                       }}
                       className="size-full object-cover transition duration-200 group-hover:scale-110"
@@ -67,16 +74,16 @@ export function ReportTable({
                   </div>
                   <div>
                     <div className="font-semibold">{r.street}</div>
-                    <div className="text-xs text-slate-500">#{r.id} · {r.date}</div>
+                    <div className="text-xs text-slate-500">
+                      #{r.id} · {r.date}
+                    </div>
                   </div>
                 </div>
               </td>
               <td className="px-3">
                 <SeverityBadge s={r.severity} />
               </td>
-              <td className="px-3 font-display font-bold">
-                {Math.round(r.confidence * 100)}%
-              </td>
+              <td className="px-3 font-display font-bold">{Math.round(r.confidence * 100)}%</td>
               <td className="px-3">
                 <StatusBadge s={r.status} />
               </td>
@@ -86,7 +93,7 @@ export function ReportTable({
                     onClick={() => onOpen(r)}
                     className="rounded-full border border-line px-4 py-1.5 text-xs font-semibold hover:bg-ink hover:text-white"
                   >
-                    {readOnly ? 'Detail' : r.status === 'SELESAI' ? 'Info' : 'Ubah'}
+                    {readOnly ? "Detail" : r.status === "SELESAI" ? "Info" : "Ubah"}
                   </button>
                 </td>
               )}
@@ -94,27 +101,19 @@ export function ReportTable({
           ))}
         </tbody>
       </table>
-      {preview && (
-        <ImagePreviewModal report={preview} onClose={() => setPreview(null)} />
-      )}
+      {preview && <ImagePreviewModal report={preview} onClose={() => setPreview(null)} />}
     </div>
-  )
+  );
 }
 
-export function ImagePreviewModal({
-  report,
-  onClose,
-}: {
-  report: Report
-  onClose: () => void
-}) {
-  const [activeTab, setActiveTab] = useState<'annotated' | 'original'>(
-    report.annotated_img ? 'annotated' : 'original'
-  )
+export function ImagePreviewModal({ report, onClose }: { report: Report; onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<"annotated" | "original">(
+    report.annotated_img ? "annotated" : "original",
+  );
   const currentSrc =
-    activeTab === 'annotated'
+    activeTab === "annotated"
       ? report.annotated_img || report.img || DEFAULT_ROAD_IMG
-      : report.img || DEFAULT_ROAD_IMG
+      : report.img || DEFAULT_ROAD_IMG;
 
   return (
     <div
@@ -144,21 +143,21 @@ export function ImagePreviewModal({
         {report.annotated_img && (
           <div className="flex gap-2 border-b border-line bg-soft/60 px-6 py-2.5">
             <button
-              onClick={() => setActiveTab('annotated')}
+              onClick={() => setActiveTab("annotated")}
               className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
-                activeTab === 'annotated'
-                  ? 'bg-ink text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-white'
+                activeTab === "annotated"
+                  ? "bg-ink text-white shadow-sm"
+                  : "text-slate-600 hover:bg-white"
               }`}
             >
               Foto Deteksi AI (Bounding Box)
             </button>
             <button
-              onClick={() => setActiveTab('original')}
+              onClick={() => setActiveTab("original")}
               className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
-                activeTab === 'original'
-                  ? 'bg-ink text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-white'
+                activeTab === "original"
+                  ? "bg-ink text-white shadow-sm"
+                  : "text-slate-600 hover:bg-white"
               }`}
             >
               Foto Asli Kamera
@@ -171,12 +170,12 @@ export function ImagePreviewModal({
             src={currentSrc}
             alt={report.street}
             onError={(e) => {
-              const target = e.currentTarget as HTMLImageElement
+              const target = e.currentTarget as HTMLImageElement;
               if (report.img && target.src !== report.img && target.src !== DEFAULT_ROAD_IMG) {
-                target.src = report.img
+                target.src = report.img;
               } else if (target.src !== DEFAULT_ROAD_IMG) {
-                target.onerror = null
-                target.src = DEFAULT_ROAD_IMG
+                target.onerror = null;
+                target.src = DEFAULT_ROAD_IMG;
               }
             }}
             className="size-full object-contain"
@@ -191,7 +190,7 @@ export function ImagePreviewModal({
             </span>
             <span className="text-slate-300">|</span>
             <span className="text-slate-600">
-              {report.kind === 'pothole' ? 'Lubang Jalan' : 'Retakan Aspal'}
+              {report.kind === "pothole" ? "Lubang Jalan" : "Retakan Aspal"}
             </span>
             <span className="text-slate-300">|</span>
             <span className="text-slate-500">{report.date}</span>
@@ -202,7 +201,7 @@ export function ImagePreviewModal({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function EditModal({
@@ -211,41 +210,41 @@ export function EditModal({
   onSave,
   readOnly = false,
 }: {
-  report: Report
-  onClose: () => void
-  onSave?: (id: number, patch: Partial<Report>, from: Status, hide: boolean) => void
-  readOnly?: boolean
+  report: Report;
+  onClose: () => void;
+  onSave?: (id: number, patch: Partial<Report>, from: Status, hide: boolean) => void;
+  readOnly?: boolean;
 }) {
-  const [activeTab, setActiveTab] = useState<'annotated' | 'original'>(
-    report.annotated_img ? 'annotated' : 'original'
-  )
-  const [showFullPreview, setShowFullPreview] = useState(false)
+  const [activeTab, setActiveTab] = useState<"annotated" | "original">(
+    report.annotated_img ? "annotated" : "original",
+  );
+  const [showFullPreview, setShowFullPreview] = useState(false);
   const [status, setStatus] = useState<Status>(
-    report.status === 'PENDING_REVIEW' ? 'BARU' : report.status
-  )
-  const [notes, setNotes] = useState(report.notes ?? '')
-  const [hide, setHide] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const locked = readOnly || report.status === 'SELESAI'
+    report.status === "PENDING_REVIEW" ? "BARU" : report.status,
+  );
+  const [notes, setNotes] = useState(report.notes ?? "");
+  const [hide, setHide] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const locked = readOnly || report.status === "SELESAI";
 
   async function handleSave() {
-    if (!onSave || readOnly) return
-    setSaving(true)
+    if (!onSave || readOnly) return;
+    setSaving(true);
     try {
       // Sinkronisasi status ke backend FastAPI & Supabase
-      await updateReportStatusApi(report.id, hide ? report.status : status, notes, hide)
+      await updateReportStatusApi(report.id, hide ? report.status : status, notes, hide);
     } catch (e) {
-      console.warn('API sync failed, using local update:', e)
+      console.warn("API sync failed, using local update:", e);
     } finally {
-      onSave(report.id, hide ? { hidden: true, notes } : { status, notes }, report.status, hide)
-      setSaving(false)
+      onSave(report.id, hide ? { hidden: true, notes } : { status, notes }, report.status, hide);
+      setSaving(false);
     }
   }
 
   const currentModalImg =
-    activeTab === 'annotated'
+    activeTab === "annotated"
       ? report.annotated_img || report.img || DEFAULT_ROAD_IMG
-      : report.img || DEFAULT_ROAD_IMG
+      : report.img || DEFAULT_ROAD_IMG;
 
   return (
     <div
@@ -259,7 +258,7 @@ export function EditModal({
         <div className="flex items-start justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-              {readOnly ? 'Detail Laporan' : 'Laporan'} #{report.id}
+              {readOnly ? "Detail Laporan" : "Laporan"} #{report.id}
             </div>
             <h3 className="text-2xl font-extrabold">{report.street}</h3>
           </div>
@@ -277,22 +276,22 @@ export function EditModal({
           <div className="mt-4 flex gap-2">
             <button
               type="button"
-              onClick={() => setActiveTab('annotated')}
+              onClick={() => setActiveTab("annotated")}
               className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                activeTab === 'annotated'
-                  ? 'bg-ink text-white shadow-sm'
-                  : 'bg-soft text-slate-600 hover:bg-slate-200'
+                activeTab === "annotated"
+                  ? "bg-ink text-white shadow-sm"
+                  : "bg-soft text-slate-600 hover:bg-slate-200"
               }`}
             >
               Deteksi AI (Box)
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('original')}
+              onClick={() => setActiveTab("original")}
               className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                activeTab === 'original'
-                  ? 'bg-ink text-white shadow-sm'
-                  : 'bg-soft text-slate-600 hover:bg-slate-200'
+                activeTab === "original"
+                  ? "bg-ink text-white shadow-sm"
+                  : "bg-soft text-slate-600 hover:bg-slate-200"
               }`}
             >
               Foto Asli
@@ -309,12 +308,12 @@ export function EditModal({
             src={currentModalImg}
             alt={report.street}
             onError={(e) => {
-              const target = e.currentTarget as HTMLImageElement
+              const target = e.currentTarget as HTMLImageElement;
               if (report.img && target.src !== report.img && target.src !== DEFAULT_ROAD_IMG) {
-                target.src = report.img
+                target.src = report.img;
               } else if (target.src !== DEFAULT_ROAD_IMG) {
-                target.onerror = null
-                target.src = DEFAULT_ROAD_IMG
+                target.onerror = null;
+                target.src = DEFAULT_ROAD_IMG;
               }
             }}
             className="h-44 w-full object-cover transition duration-300 group-hover:scale-105"
@@ -369,7 +368,7 @@ export function EditModal({
             onClick={onClose}
             className="rounded-full border border-line px-5 py-2.5 text-sm font-semibold hover:bg-soft"
           >
-            {locked || readOnly ? 'Tutup' : 'Batal'}
+            {locked || readOnly ? "Tutup" : "Batal"}
           </button>
           {!locked && !readOnly && onSave && (
             <button
@@ -377,7 +376,7 @@ export function EditModal({
               onClick={handleSave}
               className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
             >
-              {saving ? 'Menyimpan…' : 'Simpan progres'}
+              {saving ? "Menyimpan…" : "Simpan progres"}
             </button>
           )}
         </div>
@@ -386,38 +385,34 @@ export function EditModal({
         <ImagePreviewModal report={report} onClose={() => setShowFullPreview(false)} />
       )}
     </div>
-  )
+  );
 }
 
 export function RekapPage({ reports }: { reports: Report[] }) {
-  const isos = reports.map((r) => r.iso).sort()
-  const [from, setFrom] = useState(isos[0] ?? todayIso())
-  const [to, setTo] = useState(todayIso() > (isos.at(-1) ?? '') ? todayIso() : isos.at(-1)!)
-  const [st, setSt] = useState<'ALL' | Status>('ALL')
+  const isos = reports.map((r) => r.iso).sort();
+  const [from, setFrom] = useState(isos[0] ?? todayIso());
+  const [to, setTo] = useState(todayIso() > (isos.at(-1) ?? "") ? todayIso() : isos.at(-1)!);
+  const [st, setSt] = useState<"ALL" | Status>("ALL");
 
   const rows = useMemo(
     () =>
       reports.filter(
-        (r) =>
-          !r.hidden &&
-          r.iso >= from &&
-          r.iso <= to &&
-          (st === 'ALL' || r.status === st)
+        (r) => !r.hidden && r.iso >= from && r.iso <= to && (st === "ALL" || r.status === st),
       ),
-    [reports, from, to, st]
-  )
+    [reports, from, to, st],
+  );
 
   function downloadExcel() {
-    const url = getExcelDownloadUrl(from, to, st)
-    window.open(url, '_blank')
+    const url = getExcelDownloadUrl(from, to, st);
+    window.open(url, "_blank");
   }
 
   function downloadOfficialPdf() {
-    const url = getPdfDownloadUrl(from, to, st)
-    window.open(url, '_blank')
+    const url = getPdfDownloadUrl(from, to, st);
+    window.open(url, "_blank");
   }
 
-  const field = 'mt-1.5 rounded-xl border border-line bg-soft px-3 py-2.5 text-sm'
+  const field = "mt-1.5 rounded-xl border border-line bg-soft px-3 py-2.5 text-sm";
 
   return (
     <div className="space-y-4">
@@ -444,11 +439,11 @@ export function RekapPage({ reports }: { reports: Report[] }) {
           Status
           <select
             value={st}
-            onChange={(e) => setSt(e.target.value as 'ALL' | Status)}
+            onChange={(e) => setSt(e.target.value as "ALL" | Status)}
             className={`${field} block`}
           >
             <option value="ALL">Semua</option>
-            {(['PENDING_REVIEW', ...STATUSES] as Status[]).map((s) => (
+            {(["PENDING_REVIEW", ...STATUSES] as Status[]).map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABEL[s]}
               </option>
@@ -487,9 +482,7 @@ export function RekapPage({ reports }: { reports: Report[] }) {
             </h3>
           </div>
           <div className="text-right">
-            <div className="font-display text-5xl font-extrabold leading-none">
-              {rows.length}
-            </div>
+            <div className="font-display text-5xl font-extrabold leading-none">{rows.length}</div>
             <div className="text-xs text-slate-500">laporan</div>
           </div>
         </div>
@@ -528,5 +521,5 @@ export function RekapPage({ reports }: { reports: Report[] }) {
         </table>
       </Card>
     </div>
-  )
+  );
 }

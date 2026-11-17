@@ -1,8 +1,8 @@
 {
   "name": "potholescan",
-  "description": "Platform Deteksi & Tata Kelola Kerusakan Jalan Berbasis AI YOLOv8 dan Supabase PostGIS",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
+  "description": "Platform Deteksi & Tata Kelola Kerusakan Jalan Berbasis AI YOLOv8 dan Supabase PostGIS",
   "type": "module",
   "scripts": {
     "dev": "vite",

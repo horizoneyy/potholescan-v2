@@ -7,30 +7,30 @@
 [![React](https://img.shields.io/badge/React-19.0-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-06B6D4.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
-**PotholeScan** adalah sistem cerdas *end-to-end* untuk deteksi otomatis, penentuan tingkat keparahan (*severity*), dan tata kelola penanganan kerusakan jalan (lubang dan retakan) berbasis kecerdasan buatan (*Deep Learning* YOLOv8s) dan sistem informasi geografis PostGIS.
+**PotholeScan** adalah sistem cerdas _end-to-end_ untuk deteksi otomatis, penentuan tingkat keparahan (_severity_), dan tata kelola penanganan kerusakan jalan (lubang dan retakan) berbasis kecerdasan buatan (_Deep Learning_ YOLOv8s) dan sistem informasi geografis PostGIS.
 
-Dibangun dengan arsitektur modern yang memisahkan pelaporan warga (*Public Crowdsourcing*) dan manajemen operasional dinas (*Staff & Admin Dashboard*), terintegrasi langsung dengan ekspor dokumen rekapitulasi resmi Dinas PUPR.
+Dibangun dengan arsitektur modern yang memisahkan pelaporan warga (_Public Crowdsourcing_) dan manajemen operasional dinas (_Staff & Admin Dashboard_), terintegrasi langsung dengan ekspor dokumen rekapitulasi resmi Dinas PUPR.
 
 ---
 
 ## 📌 Fitur Utama
 
 1. **Deteksi Kerusakan Jalan Berbasis AI (YOLOv8s):**
-   - Deteksi real-time objek *pothole* (lubang) dan *crack* (retakan jalan).
+   - Deteksi real-time objek _pothole_ (lubang) dan _crack_ (retakan jalan).
    - Inferensi ultra-cepat (~16 ms per citra) memanfaatkan akselerasi GPU NVIDIA CUDA.
-2. **Formulasi Keparahan 2-Jalur Terkalibrasi (*Calibrated Severity Grading*):**
-   - Jalur Area ($R_{\text{area}} = \frac{\text{Area BBox}}{\text{Area Citra}}$) untuk lubang (*pothole*).
-   - Jalur Rentang ($R_{\text{span}} = \max(w, h)$) untuk retakan (*crack* memanjang).
-   - Klasifikasi otomatis: **RINGAN**, **SEDANG**, dan **BERAT** dengan mitigasi *worst-case escalation*.
-3. **Penyelesaian Lokasi Cerdas (*Location Resolution*):**
+2. **Formulasi Keparahan 2-Jalur Terkalibrasi (_Calibrated Severity Grading_):**
+   - Jalur Area ($R_{\text{area}} = \frac{\text{Area BBox}}{\text{Area Citra}}$) untuk lubang (_pothole_).
+   - Jalur Rentang ($R_{\text{span}} = \max(w, h)$) untuk retakan (_crack_ memanjang).
+   - Klasifikasi otomatis: **RINGAN**, **SEDANG**, dan **BERAT** dengan mitigasi _worst-case escalation_.
+3. **Penyelesaian Lokasi Cerdas (_Location Resolution_):**
    - Ekstraksi koordinat otomatis dari EXIF metadata kamera smartphone pelapor.
-   - Fallback otomatis ke *browser geolocation* (HTML5 Geolocation API) dan *manual coordinate entry*.
+   - Fallback otomatis ke _browser geolocation_ (HTML5 Geolocation API) dan _manual coordinate entry_.
 4. **Analisis Geospasial Spasial PostGIS:**
    - Kueri radius 500 meter untuk menghitung akumulasi kerusakan aktif di sekitar titik laporan.
    - Deteksi dan pencegahan duplikasi laporan warga pada segmen jalan yang sama.
 5. **Dashboard Operasional & Tata Kelola Dinas:**
    - Manajemen status penanganan: `BARU` $\rightarrow$ `DIVERIFIKASI` $\rightarrow$ `DALAM_PENANGANAN` $\rightarrow$ `SELESAI`.
-   - Filter spasial, visualisasi sebaran peta Leaflet dengan radius pulse, dan audit trail (*status history*).
+   - Filter spasial, visualisasi sebaran peta Leaflet dengan radius pulse, dan audit trail (_status history_).
 6. **Ekspor Dokumen PDF Rekapitulasi Resmi Dinas PUPR:**
    - Pembuatan laporan rekapitulasi resmi format A4 instan menggunakan ReportLab dengan kop dinas resmi, tabel kronologi, dan ringkasan kerusakan.
 
@@ -40,14 +40,14 @@ Dibangun dengan arsitektur modern yang memisahkan pelaporan warga (*Public Crowd
 
 Model YOLOv8s dilatih menggunakan dataset 1.330 citra jalan (split 70% Train, 20% Val, 10% Test) dengan akselerasi lokal GPU NVIDIA GeForce RTX 4050:
 
-| Metrik Evaluasi | Target Standar SRS | Hasil Capaian Model | Status |
-| :--- | :---: | :---: | :---: |
-| **mAP@0.5** | $\ge 70.0\%$ | **86.9%** | **Lolos (Unggul)** |
-| **Recall (Sensitivitas)** | $\ge 75.0\%$ | **78.2%** | **Lolos** |
-| **Precision** | - | **85.2%** | **Optimal** |
-| **Latensi Inferensi** | $\le 1000\text{ ms}$ | **16.01 ms** / citra | **Super Cepat** |
+| Metrik Evaluasi           |  Target Standar SRS  | Hasil Capaian Model  |       Status       |
+| :------------------------ | :------------------: | :------------------: | :----------------: |
+| **mAP@0.5**               |     $\ge 70.0\%$     |      **86.9%**       | **Lolos (Unggul)** |
+| **Recall (Sensitivitas)** |     $\ge 75.0\%$     |      **78.2%**       |     **Lolos**      |
+| **Precision**             |          -           |      **85.2%**       |    **Optimal**     |
+| **Latensi Inferensi**     | $\le 1000\text{ ms}$ | **16.01 ms** / citra |  **Super Cepat**   |
 
-> Seluruh kurva evaluasi (*Confusion Matrix, Precision-Recall Curve, F1-Confidence Curve*) terdokumentasi di folder [`docs/training_metrics/`](docs/training_metrics/).
+> Seluruh kurva evaluasi (_Confusion Matrix, Precision-Recall Curve, F1-Confidence Curve_) terdokumentasi di folder [`docs/training_metrics/`](docs/training_metrics/).
 
 ---
 
@@ -76,12 +76,12 @@ flowchart TD
     UI_Publik -->|POST /api/reports| API_Gateway
     UI_Dinas -->|GET /api/reports| API_Gateway
     UI_Dinas -->|GET /api/reports/pdf| API_Gateway
-    
+
     API_Gateway --> AI_Engine
     AI_Engine --> Severity
     API_Gateway --> Geo_Svc
     API_Gateway --> PDF_Svc
-    
+
     API_Gateway -->|Upload Media| Storage
     API_Gateway -->|Insert / Query Spasial| Postgres
 ```
@@ -132,12 +132,13 @@ potholescan/
 
 ---
 
-## 🚀 Panduan Memulai Cepat (*Quick Start*)
+## 🚀 Panduan Memulai Cepat (_Quick Start_)
 
 ### 1. Prasyarat Sistem
+
 - **Node.js** v20+ & **npm** v10+
 - **Python** 3.12+
-- *(Opsional namun direkomendasikan)*: GPU NVIDIA dengan CUDA 12.x untuk akselerasi inferensi AI.
+- _(Opsional namun direkomendasikan)_: GPU NVIDIA dengan CUDA 12.x untuk akselerasi inferensi AI.
 
 ---
 
@@ -147,7 +148,7 @@ potholescan/
    ```bash
    cd backend
    ```
-2. Buat dan aktifkan *Virtual Environment*:
+2. Buat dan aktifkan _Virtual Environment_:
    ```bash
    python -m venv .venv
    # Windows PowerShell:
@@ -180,22 +181,25 @@ potholescan/
 ### 3. Menjalankan Frontend
 
 Buka terminal baru di direktori root proyek:
+
 ```bash
 npm install
 npm run dev
 ```
-Aplikasi frontend akan aktif di: **`http://localhost:5173`** *(otomatis terhubung melalui reverse proxy `/api` ke backend port 8000)*.
+
+Aplikasi frontend akan aktif di: **`http://localhost:5173`** _(otomatis terhubung melalui reverse proxy `/api` ke backend port 8000)_.
 
 ---
 
-## 🔑 Akun Uji Coba Default (*Demo Credentials*)
+## 🔑 Akun Uji Coba Default (_Demo Credentials_)
 
-| Peran | Username | Password | Hak Akses |
-| :--- | :--- | :--- | :--- |
-| **Administrator** | `admin` | `admin123` | Akses penuh, manajemen laporan, rekapitulasi, & ekspor PDF |
-| **Petugas Lapangan** | `petugas01` | `petugas123` | Verifikasi teknis & pembaruan status penanganan jalan |
+| Peran                | Username    | Password     | Hak Akses                                                  |
+| :------------------- | :---------- | :----------- | :--------------------------------------------------------- |
+| **Administrator**    | `admin`     | `admin123`   | Akses penuh, manajemen laporan, rekapitulasi, & ekspor PDF |
+| **Petugas Lapangan** | `petugas01` | `petugas123` | Verifikasi teknis & pembaruan status penanganan jalan      |
 
 ---
 
 ## 📄 Lisensi
+
 Proyek ini dikembangkan di bawah lisensi MIT. Silakan gunakan dan kembangkan untuk kepentingan publik dan infrastruktur tata kelola jalan yang lebih baik.

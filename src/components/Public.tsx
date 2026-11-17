@@ -1,19 +1,27 @@
-import { useEffect, useState } from 'react'
-import { CameraCapture } from './Camera'
-import { AlertTriangle, Camera, MapPin, ScanLine, CheckCircle2, Clock, RotateCcw } from 'lucide-react'
-import { Card, Logo, SeverityBadge } from './ui'
-import { MapView, DEFAULT_ROAD_IMG } from './MapView'
-import { SEV_COLOR, todayIso, type Report, type Settings, type Severity } from '../data'
-import { submitReport, fetchNearby, type ApiReportResponse } from '../api'
+import { useEffect, useState } from "react";
+import { CameraCapture } from "./Camera";
+import {
+  AlertTriangle,
+  Camera,
+  MapPin,
+  ScanLine,
+  CheckCircle2,
+  Clock,
+  RotateCcw,
+} from "lucide-react";
+import { Card, Logo, SeverityBadge } from "./ui";
+import { MapView, DEFAULT_ROAD_IMG } from "./MapView";
+import { SEV_COLOR, todayIso, type Report, type Settings, type Severity } from "../data";
+import { submitReport, fetchNearby, type ApiReportResponse } from "../api";
 
 interface Result {
-  severity: Severity
-  confidence: number
-  box: [number, number, number, number]
-  status: 'BARU' | 'PENDING_REVIEW'
-  id: number
-  annotated_url?: string
-  none?: boolean
+  severity: Severity;
+  confidence: number;
+  box: [number, number, number, number];
+  status: "BARU" | "PENDING_REVIEW";
+  id: number;
+  annotated_url?: string;
+  none?: boolean;
 }
 
 export function Public({
@@ -22,28 +30,28 @@ export function Public({
   onAdd,
   onLogin,
 }: {
-  reports: Report[]
-  settings: Settings
-  onAdd: (r: Report) => void
-  onLogin: () => void
+  reports: Report[];
+  settings: Settings;
+  onAdd: (r: Report) => void;
+  onLogin: () => void;
 }) {
-  const [cam, setCam] = useState(false)
-  const [fileUrl, setFileUrl] = useState<string | null>(null)
-  const [fileBlob, setFileBlob] = useState<Blob | null>(null)
-  const [phase, setPhase] = useState<'idle' | 'scanning' | 'done'>('idle')
-  const [res, setRes] = useState<Result | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [gpsActive, setGpsActive] = useState<boolean>(false)
-  const [gpsLoading, setGpsLoading] = useState<boolean>(true)
+  const [cam, setCam] = useState(false);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [fileBlob, setFileBlob] = useState<Blob | null>(null);
+  const [phase, setPhase] = useState<"idle" | "scanning" | "done">("idle");
+  const [res, setRes] = useState<Result | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [gpsActive, setGpsActive] = useState<boolean>(false);
+  const [gpsLoading, setGpsLoading] = useState<boolean>(true);
 
   // Real GPS Coordinates (Default fallback: Jakarta Selatan)
   const [userCoords, setUserCoords] = useState<{ lat: number; lon: number }>({
     lat: -6.2088,
     lon: 106.8456,
-  })
-  const [coordsLabel, setCoordsLabel] = useState('Mencari sinyal GPS…')
-  const [srcLabel, setSrcLabel] = useState('Menunggu GPS aktif')
-  const [nearbyCount, setNearbyCount] = useState<number>(0)
+  });
+  const [coordsLabel, setCoordsLabel] = useState("Mencari sinyal GPS…");
+  const [srcLabel, setSrcLabel] = useState("Menunggu GPS aktif");
+  const [nearbyCount, setNearbyCount] = useState<number>(0);
 
   // Fetch real nearby warnings whenever coords change
   useEffect(() => {
@@ -52,88 +60,93 @@ export function Public({
       .catch(() => {
         // Fallback local distance filter
         const count = reports.filter(
-          (r) => !r.hidden && r.status !== 'SELESAI' && r.status !== 'PENDING_REVIEW'
-        ).length
-        setNearbyCount(count)
-      })
-  }, [userCoords, settings.radius, reports])
+          (r) => !r.hidden && r.status !== "SELESAI" && r.status !== "PENDING_REVIEW",
+        ).length;
+        setNearbyCount(count);
+      });
+  }, [userCoords, settings.radius, reports]);
 
   // Get browser GPS with high accuracy
   function requestGps() {
     if (!navigator.geolocation) {
-      setGpsLoading(false)
-      setGpsActive(false)
-      setSrcLabel('Peramban tidak mendukung geolokasi GPS')
-      setCoordsLabel('Tidak tersedia')
-      return
+      setGpsLoading(false);
+      setGpsActive(false);
+      setSrcLabel("Peramban tidak mendukung geolokasi GPS");
+      setCoordsLabel("Tidak tersedia");
+      return;
     }
-    setGpsLoading(true)
+    setGpsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (p) => {
-        const lat = parseFloat(p.coords.latitude.toFixed(5))
-        const lon = parseFloat(p.coords.longitude.toFixed(5))
-        setUserCoords({ lat, lon })
-        setCoordsLabel(`${lat}, ${lon}`)
-        setSrcLabel('GPS perangkat aktif (Akurat)')
-        setGpsActive(true)
-        setGpsLoading(false)
+        const lat = parseFloat(p.coords.latitude.toFixed(5));
+        const lon = parseFloat(p.coords.longitude.toFixed(5));
+        setUserCoords({ lat, lon });
+        setCoordsLabel(`${lat}, ${lon}`);
+        setSrcLabel("GPS perangkat aktif (Akurat)");
+        setGpsActive(true);
+        setGpsLoading(false);
       },
       () => {
-        setGpsActive(false)
-        setGpsLoading(false)
-        setSrcLabel('Izin lokasi belum diberikan')
-        setCoordsLabel('GPS tidak aktif')
+        setGpsActive(false);
+        setGpsLoading(false);
+        setSrcLabel("Izin lokasi belum diberikan");
+        setCoordsLabel("GPS tidak aktif");
       },
-      { timeout: 10000, enableHighAccuracy: true }
-    )
+      { timeout: 10000, enableHighAccuracy: true },
+    );
   }
 
   useEffect(() => {
-    requestGps()
-  }, [])
+    requestGps();
+  }, []);
 
-  useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl) }, [fileUrl])
+  useEffect(
+    () => () => {
+      if (fileUrl) URL.revokeObjectURL(fileUrl);
+    },
+    [fileUrl],
+  );
 
   function handleCaptureUrl(url: string) {
-    setCam(false)
-    setFileUrl(url)
-    setRes(null)
-    setErrorMsg(null)
-    setPhase('idle')
+    setCam(false);
+    setFileUrl(url);
+    setRes(null);
+    setErrorMsg(null);
+    setPhase("idle");
 
     // Fetch the blob from object URL
     fetch(url)
       .then((r) => r.blob())
       .then((b) => setFileBlob(b))
-      .catch(() => {})
+      .catch(() => {});
   }
 
   async function analyze() {
-    if (!fileBlob) return
-    setPhase('scanning')
-    setErrorMsg(null)
+    if (!fileBlob) return;
+    setPhase("scanning");
+    setErrorMsg(null);
 
     try {
       // Panggilan nyata ke backend FastAPI (POST /api/reports)
-      const data: ApiReportResponse = await submitReport(fileBlob, userCoords.lat, userCoords.lon)
+      const data: ApiReportResponse = await submitReport(fileBlob, userCoords.lat, userCoords.lon);
 
-      if (data.status === 'NORMAL' || !data.detections || data.detections.length === 0) {
+      if (data.status === "NORMAL" || !data.detections || data.detections.length === 0) {
         setRes({
           id: 0,
           confidence: data.max_confidence || 0,
-          severity: 'RINGAN',
-          status: 'BARU',
+          severity: "RINGAN",
+          status: "BARU",
           box: [0, 0, 0, 0],
           none: true,
-        })
-        setPhase('done')
-        return
+        });
+        setPhase("done");
+        return;
       }
 
-      const topDet = data.detections[0]
-      const severity: Severity = (data.severity as Severity) || 'SEDANG'
-      const status = (data.status as 'BARU' | 'PENDING_REVIEW') || 'BARU'
-      const reportId = data.report_id || Math.max(0, ...reports.map((r) => r.id)) + 1
+      const topDet = data.detections[0];
+      const severity: Severity = (data.severity as Severity) || "SEDANG";
+      const status = (data.status as "BARU" | "PENDING_REVIEW") || "BARU";
+      const reportId = data.report_id || Math.max(0, ...reports.map((r) => r.id)) + 1;
 
       const result: Result = {
         severity,
@@ -142,18 +155,19 @@ export function Public({
         id: reportId,
         box: topDet.bbox,
         annotated_url: data.annotated_image_url,
-      }
+      };
 
-      setRes(result)
-      setPhase('done')
+      setRes(result);
+      setPhase("done");
       if (data.nearby_unresolved_count !== undefined) {
-        setNearbyCount(data.nearby_unresolved_count)
+        setNearbyCount(data.nearby_unresolved_count);
       }
 
       // Tambahkan ke state laporan publik
       onAdd({
         id: reportId,
-        street: data.location?.source === 'exif' ? 'Terdeteksi dari GPS Foto' : 'Lokasi Laporan Anda',
+        street:
+          data.location?.source === "exif" ? "Terdeteksi dari GPS Foto" : "Lokasi Laporan Anda",
         x: 50,
         y: 50,
         lat: data.location?.latitude ?? userCoords.lat,
@@ -163,33 +177,34 @@ export function Public({
         confidence: data.max_confidence || topDet.confidence,
         kind: topDet.class_name,
         hidden: false,
-        date: 'Hari ini',
+        date: "Hari ini",
         iso: todayIso(),
         img: data.image_url || fileUrl || DEFAULT_ROAD_IMG,
         annotated_img: data.annotated_image_url || undefined,
-      })
+      });
     } catch (err: any) {
-      console.warn('Backend offline or error, running client fallback:', err)
-      setErrorMsg(err.message || 'Gagal menghubungi server inferensi.')
-      
+      console.warn("Backend offline or error, running client fallback:", err);
+      setErrorMsg(err.message || "Gagal menghubungi server inferensi.");
+
       // Fallback simulasi jika backend sedang tidak aktif
       setTimeout(() => {
-        const confidence = +(0.45 + Math.random() * 0.5).toFixed(2)
-        const severity: Severity = confidence > 0.8 ? 'BERAT' : confidence > 0.6 ? 'SEDANG' : 'RINGAN'
-        const status = confidence >= settings.publish ? 'BARU' : 'PENDING_REVIEW'
-        const id = Math.max(...reports.map((r) => r.id)) + 1
+        const confidence = +(0.45 + Math.random() * 0.5).toFixed(2);
+        const severity: Severity =
+          confidence > 0.8 ? "BERAT" : confidence > 0.6 ? "SEDANG" : "RINGAN";
+        const status = confidence >= settings.publish ? "BARU" : "PENDING_REVIEW";
+        const id = Math.max(...reports.map((r) => r.id)) + 1;
         const r: Result = {
           severity,
           confidence,
           status,
           id,
           box: [0.35, 0.45, 0.3, 0.25],
-        }
-        setRes(r)
-        setPhase('done')
+        };
+        setRes(r);
+        setPhase("done");
         onAdd({
           id,
-          street: 'Lokasi laporan Anda',
+          street: "Lokasi laporan Anda",
           x: 50,
           y: 50,
           lat: userCoords.lat + (Math.random() - 0.5) * 0.005,
@@ -197,27 +212,27 @@ export function Public({
           severity,
           status,
           confidence,
-          kind: 'pothole',
+          kind: "pothole",
           hidden: false,
-          date: 'Hari ini',
+          date: "Hari ini",
           iso: todayIso(),
           img: fileUrl || DEFAULT_ROAD_IMG,
-        })
-      }, 1500)
+        });
+      }, 1500);
     }
   }
 
   function reset() {
-    setFileUrl(null)
-    setFileBlob(null)
-    setRes(null)
-    setErrorMsg(null)
-    setPhase('idle')
+    setFileUrl(null);
+    setFileBlob(null);
+    setRes(null);
+    setErrorMsg(null);
+    setPhase("idle");
   }
 
   const activeReportsCount = reports.filter(
-    (r) => !r.hidden && r.status !== 'SELESAI' && r.status !== 'PENDING_REVIEW'
-  ).length
+    (r) => !r.hidden && r.status !== "SELESAI" && r.status !== "PENDING_REVIEW",
+  ).length;
 
   return (
     <div className="min-h-screen">
@@ -234,13 +249,17 @@ export function Public({
       <main className="mx-auto max-w-[1280px] px-6 pb-16">
         <section className="rise grid items-end gap-8 pb-8 pt-6 lg:grid-cols-[1.4fr_1fr]">
           <h1 className="text-5xl font-extrabold leading-[1.02] sm:text-7xl">
-            Jalan rusak,<br />
+            Jalan rusak,
+            <br />
             <span className="text-slate-400">terdeteksi</span> dalam detik.
           </h1>
           <div className="flex items-end gap-8 lg:justify-end">
             <Stat n={activeReportsCount} l="Titik aktif" />
             <Stat
-              n={reports.filter((r) => r.severity === 'BERAT' && r.status !== 'SELESAI' && !r.hidden).length}
+              n={
+                reports.filter((r) => r.severity === "BERAT" && r.status !== "SELESAI" && !r.hidden)
+                  .length
+              }
               l="Kategori berat"
             />
             <Stat n={`${settings.radius}m`} l="Radius waspada" />
@@ -252,11 +271,15 @@ export function Public({
             {/* Header peta di luar area viewport peta agar tidak menutupi peta */}
             <div className="flex flex-wrap items-center justify-between border-b border-line bg-white px-5 py-3.5">
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Peta Spasial GIS</div>
-                <div className="font-display text-base font-bold text-slate-900">OpenStreetMap Terintegrasi</div>
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Peta Spasial GIS
+                </div>
+                <div className="font-display text-base font-bold text-slate-900">
+                  OpenStreetMap Terintegrasi
+                </div>
               </div>
               <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
-                {(['BERAT', 'SEDANG', 'RINGAN'] as Severity[]).map((s) => (
+                {(["BERAT", "SEDANG", "RINGAN"] as Severity[]).map((s) => (
                   <span key={s} className="flex items-center gap-1.5">
                     <span className="size-2 rounded-full" style={{ background: SEV_COLOR[s] }} />
                     {s[0] + s.slice(1).toLowerCase()}
@@ -307,7 +330,9 @@ export function Public({
                         <ScanLine className="size-6" />
                       </div>
                       <p className="font-medium">Foto langsung dari kamera jalan</p>
-                      <p className="mt-1 text-sm text-slate-500">Kamera memerlukan koordinat GPS aktif untuk memindai</p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Kamera memerlukan koordinat GPS aktif untuk memindai
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -317,7 +342,11 @@ export function Public({
                       className="flex w-full items-center justify-center gap-2 rounded-2xl bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
                     >
                       <Camera className="size-4" />
-                      {gpsLoading ? 'Mendeteksi sinyal GPS…' : gpsActive ? 'Buka kamera' : 'Menunggu koordinat GPS aktif…'}
+                      {gpsLoading
+                        ? "Mendeteksi sinyal GPS…"
+                        : gpsActive
+                          ? "Buka kamera"
+                          : "Menunggu koordinat GPS aktif…"}
                     </button>
                     {!gpsActive && !gpsLoading && (
                       <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
@@ -340,22 +369,22 @@ export function Public({
                       src={res?.annotated_url || fileUrl || DEFAULT_ROAD_IMG}
                       alt="Foto jalan"
                       onError={(e) => {
-                        const target = e.currentTarget as HTMLImageElement
+                        const target = e.currentTarget as HTMLImageElement;
                         if (fileUrl && target.src !== fileUrl) {
-                          target.src = fileUrl
+                          target.src = fileUrl;
                         } else if (target.src !== DEFAULT_ROAD_IMG) {
-                          target.onerror = null
-                          target.src = DEFAULT_ROAD_IMG
+                          target.onerror = null;
+                          target.src = DEFAULT_ROAD_IMG;
                         }
                       }}
                       className="size-full object-cover"
                     />
-                    {phase === 'scanning' && (
+                    {phase === "scanning" && (
                       <>
                         <div className="absolute inset-0 bg-slate-900/30" />
                         <div
                           className="absolute inset-x-0 h-16 bg-gradient-to-b from-transparent via-amber-300/40 to-transparent"
-                          style={{ animation: 'scan 1.1s ease-in-out infinite alternate' }}
+                          style={{ animation: "scan 1.1s ease-in-out infinite alternate" }}
                         />
                       </>
                     )}
@@ -410,22 +439,24 @@ export function Public({
                         </span>
                       </div>
                       <div className="mt-3 flex items-start gap-2.5 text-sm text-slate-600">
-                        {res.status === 'BARU' ? (
+                        {res.status === "BARU" ? (
                           <>
                             <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-                            Laporan #{res.id} tervalidasi ({Math.round(res.confidence * 100)}% &ge; 65%) dan langsung diterbitkan ke peta publik.
+                            Laporan #{res.id} tervalidasi ({Math.round(res.confidence * 100)}% &ge;
+                            65%) dan langsung diterbitkan ke peta publik.
                           </>
                         ) : (
                           <>
                             <Clock className="mt-0.5 size-4 shrink-0 text-amber-600" />
-                            Laporan #{res.id} masuk antrean verifikasi staf (keyakinan {Math.round(res.confidence * 100)}%).
+                            Laporan #{res.id} masuk antrean verifikasi staf (keyakinan{" "}
+                            {Math.round(res.confidence * 100)}%).
                           </>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {phase === 'done' ? (
+                  {phase === "done" ? (
                     <button
                       onClick={reset}
                       className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-white py-3.5 text-sm font-semibold hover:bg-soft"
@@ -434,11 +465,11 @@ export function Public({
                     </button>
                   ) : (
                     <button
-                      disabled={phase === 'scanning'}
+                      disabled={phase === "scanning"}
                       onClick={analyze}
                       className="rounded-2xl bg-ink py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
                     >
-                      {phase === 'scanning' ? 'Menganalisis dengan YOLOv8…' : 'Analisis dengan AI'}
+                      {phase === "scanning" ? "Menganalisis dengan YOLOv8…" : "Analisis dengan AI"}
                     </button>
                   )}
                 </>
@@ -448,7 +479,7 @@ export function Public({
         </section>
       </main>
     </div>
-  )
+  );
 }
 
 function Stat({ n, l }: { n: number | string; l: string }) {
@@ -457,5 +488,5 @@ function Stat({ n, l }: { n: number | string; l: string }) {
       <div className="font-display text-5xl font-extrabold leading-none">{n}</div>
       <div className="mt-2 text-xs font-medium uppercase tracking-widest text-slate-500">{l}</div>
     </div>
-  )
+  );
 }
