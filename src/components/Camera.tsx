@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Camera as CamIcon, RefreshCw, X } from 'lucide-react'
 
 // Kamera langsung: tanpa unggah galeri. Jika izin kamera tidak tersedia, fallback ke kamera perangkat (capture).
-export function CameraCapture({ onCapture, onCancel }: { onCapture: (url: string) => void; onCancel: () => void }) {
+export function CameraCapture({ onCapture, onCancel }: { onCapture: (url: string, blob?: Blob) => void; onCancel: () => void }) {
   const video = useRef<HTMLVideoElement>(null)
   const fallback = useRef<HTMLInputElement>(null)
   const stream = useRef<MediaStream | null>(null)
@@ -29,7 +29,7 @@ export function CameraCapture({ onCapture, onCancel }: { onCapture: (url: string
     const c = document.createElement('canvas')
     c.width = v.videoWidth; c.height = v.videoHeight
     c.getContext('2d')!.drawImage(v, 0, 0)
-    c.toBlob((b) => b && onCapture(URL.createObjectURL(b)), 'image/jpeg', 0.9)
+    c.toBlob((b) => b && onCapture(URL.createObjectURL(b), b), 'image/jpeg', 0.9)
   }
 
   return (
@@ -49,7 +49,7 @@ export function CameraCapture({ onCapture, onCancel }: { onCapture: (url: string
       ) : state === 'error' ? (
         <button onClick={() => fallback.current?.click()} className="flex items-center justify-center gap-2 rounded-2xl bg-ink py-3.5 text-sm font-semibold text-white hover:bg-slate-800"><RefreshCw className="size-4" />Buka kamera perangkat</button>
       ) : null}
-      <input ref={fallback} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onCapture(URL.createObjectURL(f)) }} />
+      <input ref={fallback} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onCapture(URL.createObjectURL(f), f) }} />
     </div>
   )
 }
