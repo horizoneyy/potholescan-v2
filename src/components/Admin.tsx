@@ -103,7 +103,15 @@ export function Admin({ user, users, reports, settings, logs, update, addUser, t
             </div>
           )}
 
-          {page === 'laporan' && <Card className="overflow-hidden"><ReportTable rows={reports.filter((r) => !r.hidden)} readOnly={true} /></Card>}
+          {page === 'laporan' && (
+            <Card className="overflow-hidden">
+              <ReportTable
+                rows={reports.filter((r) => !r.hidden)}
+                readOnly={true}
+                onOpen={(r) => setEdit(r)}
+              />
+            </Card>
+          )}
           {page === 'akun' && <Accounts users={users} addUser={addUser} toggleUser={toggleUser} deleteUser={deleteUser} me={user.id} />}
           {page === 'pengaturan' && <Thresholds settings={settings} save={saveSettings} />}
           {page === 'audit' && (
@@ -117,7 +125,13 @@ export function Admin({ user, users, reports, settings, logs, update, addUser, t
           {page === 'rekap' && <RekapPage reports={reports} />}
         </div>
       </div>
-      {edit && <EditModal report={edit} onClose={() => setEdit(null)} onSave={(id, p, from, hide) => { update(id, p, from, hide); setEdit(null) }} />}
+      {edit && (
+        <EditModal
+          report={edit}
+          readOnly={true}
+          onClose={() => setEdit(null)}
+        />
+      )}
     </div>
   )
 }

@@ -28,8 +28,8 @@ export interface ApiReportResponse {
 
 export interface ApiReportItem {
   id: number
-  image_url: string
-  annotated_image_url: string
+  image_url?: string
+  annotated_image_url?: string
   latitude: number
   longitude: number
   location_source: string
