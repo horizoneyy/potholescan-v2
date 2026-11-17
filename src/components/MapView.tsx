@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet'
+import { useEffect } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { SEV_COLOR, type Report } from '../data'
 
@@ -45,7 +45,6 @@ interface MapViewProps {
   reports: Report[]
   className?: string
   userCoords?: { lat: number; lon: number }
-  userPin?: { x: number; y: number }
   radiusMeters?: number
 }
 
