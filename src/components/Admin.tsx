@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Activity, ClipboardList, FileText, LayoutGrid, LogOut, SlidersHorizontal, Trash2, UserPlus, Users } from 'lucide-react'
 import { Card, Logo, SeverityBadge } from './ui'
 import { MapView } from './MapView'
-import { EditModal, RekapPage, ReportTable } from './shared'
+import { RekapPage, ReportTable } from './shared'
 import { SEV_COLOR, type LogEntry, type Report, type Role, type Settings, type Severity, type Status, type User } from '../data'
 
 type Page = 'ringkasan' | 'laporan' | 'akun' | 'pengaturan' | 'audit' | 'rekap'
@@ -18,7 +18,7 @@ const TITLE: Record<Page, string> = { ringkasan: 'Pusat kendali', laporan: 'Semu
 
 interface Props {
   user: User; users: User[]; reports: Report[]; settings: Settings; logs: LogEntry[]
-  update: (id: number, p: Partial<Report>, from: Status, hide: boolean) => void
+  update?: (id: number, p: Partial<Report>, from: Status, hide: boolean) => void
   addUser: (u: { username: string; password: string; fullName: string; role: Role }) => Promise<string | null> | string | null
   toggleUser: (id: number) => void
   deleteUser?: (id: number) => void
@@ -26,9 +26,8 @@ interface Props {
   onLogout: () => void
 }
 
-export function Admin({ user, users, reports, settings, logs, update, addUser, toggleUser, deleteUser, saveSettings, onLogout }: Props) {
+export function Admin({ user, users, reports, settings, logs, addUser, toggleUser, deleteUser, saveSettings, onLogout }: Props) {
   const [page, setPage] = useState<Page>('ringkasan')
-  const [edit, setEdit] = useState<Report | null>(null)
   const visible = reports.filter((r) => !r.hidden)
   const pending = visible.filter((r) => r.status === 'PENDING_REVIEW').length
   const berat = visible.filter((r) => r.severity === 'BERAT' && r.status !== 'SELESAI').length
@@ -117,7 +116,6 @@ export function Admin({ user, users, reports, settings, logs, update, addUser, t
           {page === 'rekap' && <RekapPage reports={reports} />}
         </div>
       </div>
-      {edit && <EditModal report={edit} onClose={() => setEdit(null)} onSave={(id, p, from, hide) => { update(id, p, from, hide); setEdit(null) }} />}
     </div>
   )
 }
