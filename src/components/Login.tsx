@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { Logo } from './ui'
 import { MapView } from './MapView'
 import type { Report, User } from '../data'
@@ -18,19 +18,21 @@ export function Login({
 }) {
   const [u, setU] = useState('')
   const [p, setP] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!u.trim() || !p) return setErr('Harap isi username dan kata sandi.')
+    const usernameClean = u.trim().toLowerCase()
+    if (!usernameClean || !p) return setErr('Harap isi username dan kata sandi.')
 
     setLoading(true)
     setErr('')
 
     try {
       // 1. Autentikasi riil ke backend FastAPI (POST /api/auth/login)
-      const data = await loginApi(u.trim(), p)
+      const data = await loginApi(usernameClean, p)
       const authenticatedUser: User = {
         id: data.user_id || 1,
         username: data.username,
@@ -42,7 +44,7 @@ export function Login({
       onSuccess(authenticatedUser)
     } catch (apiErr: any) {
       // 2. Fallback jika backend offline / lokal demo
-      const found = users.find((x) => x.username === u.trim() && x.password === p)
+      const found = users.find((x) => x.username.toLowerCase() === usernameClean && x.password === p)
       if (found) {
         if (!found.active) {
           setLoading(false)
@@ -82,22 +84,34 @@ export function Login({
               }}
               placeholder="Masukkan username Anda"
               autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
               className="mt-1.5 w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
             />
           </label>
           <label className="mt-4 block text-sm font-medium text-slate-700">
             Kata sandi
-            <input
-              type="password"
-              value={p}
-              onChange={(e) => {
-                setP(e.target.value)
-                setErr('')
-              }}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              className="mt-1.5 w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-            />
+            <div className="relative mt-1.5">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={p}
+                onChange={(e) => {
+                  setP(e.target.value)
+                  setErr('')
+                }}
+                placeholder="••••••••"
+                autoComplete="current-password"
+                className="w-full rounded-2xl border border-line bg-white px-4 py-3 pr-11 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600 focus:outline-none"
+                aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
           </label>
           {err && (
             <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
