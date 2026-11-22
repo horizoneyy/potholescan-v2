@@ -2,7 +2,8 @@
   "ci": {
     "collect": {
       "startServerCommand": "npm run preview",
-      "startServerReadyPattern": "ready in|Local:",
+      "startServerReadyPattern": "Local|5173|http",
+      "startServerReadyTimeout": 30000,
       "url": [
         "http://localhost:5173/"
       ],
