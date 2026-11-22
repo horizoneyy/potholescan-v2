@@ -45,13 +45,18 @@ LOCAL_USERS = {
 @router.post("/login", response_model=LoginResponse)
 async def login(credentials: LoginRequest, response: Response):
     user = None
-    # 1. Coba cari di Supabase jika terkoneksi
+    # 1. Wajib verifikasi ke tabel users di Supabase jika Supabase aktif
     if supabase_svc.is_configured():
         user = supabase_svc.get_user_by_username(credentials.username)
-    
-    # 2. Fallback ke akun default jika belum ada di Supabase
-    if not user and credentials.username in LOCAL_USERS:
-        user = LOCAL_USERS[credentials.username]
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Nama pengguna atau kata sandi salah. Akun tidak terdaftar di Supabase."
+            )
+    else:
+        # Fallback hanya jika Supabase belum dikonfigurasi sama sekali
+        if credentials.username in LOCAL_USERS:
+            user = LOCAL_USERS[credentials.username]
 
     if not user:
         raise HTTPException(
@@ -59,7 +64,7 @@ async def login(credentials: LoginRequest, response: Response):
             detail="Nama pengguna atau kata sandi salah."
         )
 
-    # Verifikasi hash kata sandi (Argon2id)
+    # Verifikasi hash kata sandi (Argon2id) dari data Supabase
     if not verify_password(credentials.password, user["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

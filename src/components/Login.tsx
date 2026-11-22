@@ -31,29 +31,20 @@ export function Login({
     setErr('')
 
     try {
-      // 1. Autentikasi riil ke backend FastAPI (POST /api/auth/login)
+      // 1. Autentikasi riil ke backend FastAPI yang wajib terverifikasi di database Supabase
       const data = await loginApi(usernameClean, p)
       const matchedUser = users.find((x) => x.username.toLowerCase() === data.username.toLowerCase())
       const authenticatedUser: User = {
         id: data.user_id || matchedUser?.id || (data.role === 'admin' ? 1 : 2),
         username: data.username,
         password: '',
-        fullName: data.full_name || matchedUser?.fullName || (data.role === 'admin' ? 'Andi Daniel' : data.username),
+        fullName: data.full_name || matchedUser?.fullName || data.username,
         role: data.role,
         active: true,
       }
       onSuccess(authenticatedUser)
     } catch (apiErr: any) {
-      // 2. Fallback jika backend offline / lokal demo
-      const found = users.find((x) => x.username.toLowerCase() === usernameClean && x.password === p)
-      if (found) {
-        if (!found.active) {
-          setLoading(false)
-          return setErr('Akun ini dinonaktifkan. Hubungi administrator.')
-        }
-        onSuccess(found)
-        return
-      }
+      // Tampilkan error jika akun tidak terdaftar di Supabase atau kata sandi salah
       setErr(apiErr.message || 'Username atau kata sandi salah.')
     } finally {
       setLoading(false)
