@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import {
   initialLogs,
   initialReports,
@@ -13,9 +13,11 @@ import {
   type User,
 } from "./data";
 import { Public } from "./components/Public";
-import { Staff } from "./components/Staff";
-import { Admin } from "./components/Admin";
-import { Login } from "./components/Login";
+
+// Code splitting (WPO) untuk memisahkan chunk halaman admin & petugas
+const Staff = lazy(() => import("./components/Staff").then((m) => ({ default: m.Staff })));
+const Admin = lazy(() => import("./components/Admin").then((m) => ({ default: m.Admin })));
+const Login = lazy(() => import("./components/Login").then((m) => ({ default: m.Login })));
 import {
   fetchReports,
   fetchSettingsApi,
@@ -65,23 +67,6 @@ export default function App() {
       })
       .catch((e) => console.log("Menggunakan data offline/seed:", e));
 
-    fetchUsersApi()
-      .then((data) => {
-        if (data && data.length > 0) {
-          setUsers(
-            data.map((u: any) => ({
-              id: u.id,
-              username: u.username,
-              password: "",
-              fullName: u.full_name,
-              role: u.role,
-              active: u.is_active ?? true,
-            })),
-          );
-        }
-      })
-      .catch(() => {});
-
     fetchSettingsApi()
       .then((s) => {
         setSettings({
@@ -92,6 +77,28 @@ export default function App() {
       })
       .catch(() => {});
   }, []);
+
+  // Fetch daftar akun staf khusus saat sesi admin aktif (menghemat koneksi & mencegah 401 saat publik)
+  useEffect(() => {
+    if (session?.role === "admin") {
+      fetchUsersApi()
+        .then((data) => {
+          if (data && data.length > 0) {
+            setUsers(
+              data.map((u: any) => ({
+                id: u.id,
+                username: u.username,
+                password: "",
+                fullName: u.full_name,
+                role: u.role,
+                active: u.is_active ?? true,
+              })),
+            );
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session?.role]);
 
   const log = (
     actor: string,
@@ -212,39 +219,45 @@ export default function App() {
 
   if (session?.role === "admin")
     return (
-      <Admin
-        user={session}
-        users={users}
-        reports={reports}
-        settings={settings}
-        logs={logs}
-        update={update}
-        addUser={addUser}
-        toggleUser={toggleUser}
-        deleteUser={handleDeleteUser}
-        saveSettings={saveSettings}
-        onLogout={logout}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400 font-medium">Memuat dashboard administrator...</div>}>
+        <Admin
+          user={session}
+          users={users}
+          reports={reports}
+          settings={settings}
+          logs={logs}
+          update={update}
+          addUser={addUser}
+          toggleUser={toggleUser}
+          deleteUser={handleDeleteUser}
+          saveSettings={saveSettings}
+          onLogout={logout}
+        />
+      </Suspense>
     );
 
   if (session)
     return (
-      <Staff
-        user={session}
-        reports={reports}
-        update={update}
-        onLogout={logout}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400 font-medium">Memuat dashboard petugas...</div>}>
+        <Staff
+          user={session}
+          reports={reports}
+          update={update}
+          onLogout={logout}
+        />
+      </Suspense>
     );
 
   if (view === "login")
     return (
-      <Login
-        reports={reports}
-        users={users}
-        onBack={() => setView("public")}
-        onSuccess={setSession}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-400 font-medium">Menyiapkan halaman login...</div>}>
+        <Login
+          reports={reports}
+          users={users}
+          onBack={() => setView("public")}
+          onSuccess={setSession}
+        />
+      </Suspense>
     );
 
   return (

@@ -8,7 +8,7 @@ router = APIRouter(prefix="/api/settings", tags=["Pengaturan Sistem Dinamis"])
 supabase_svc = SupabaseService.get_instance()
 
 @router.get("")
-async def get_settings():
+def get_settings():
     db_settings = supabase_svc.get_system_settings()
     return db_settings
 

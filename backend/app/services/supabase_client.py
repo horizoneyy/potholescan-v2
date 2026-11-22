@@ -1,4 +1,5 @@
 import uuid
+import time
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
 from backend.app.core.config import settings
@@ -8,6 +9,11 @@ class SupabaseService:
 
     def __init__(self):
         self.client = None
+        # In-memory TTL Caches untuk mempercepat respons API
+        self._reports_cache: Dict[str, List[Dict[str, Any]]] = {}
+        self._reports_cache_time: Dict[str, float] = {}
+        self._active_damages_cache: Optional[List[Dict[str, Any]]] = None
+        self._active_damages_cache_time: float = 0.0
         self._init_client()
 
     @classmethod
@@ -132,45 +138,56 @@ class SupabaseService:
         }
         self.client.table("status_history").insert(history_entry).execute()
 
+        # Invalidate in-memory caches agar data baru langsung tampil
+        self._reports_cache.clear()
+        self._active_damages_cache = None
+
         return report_id
 
     def count_nearby_damages(self, lat: float, lon: float, radius_m: int = 500) -> Tuple[int, Optional[str]]:
         """
         Menghitung kerusakan aktif dalam radius 500 meter menggunakan PostGIS.
+        Menggunakan in-memory cache TTL 10 detik untuk menghindari blocking I/O berulang.
         """
         if not self.client:
             return 0, None
 
-        try:
-            # Query laporan aktif yang belum selesai dan tidak disembunyikan
-            # Menggunakan RPC fungsi PostGIS jika ada atau kueri jarak
-            res = self.client.table("reports") \
-                .select("id, max_severity, latitude, longitude") \
-                .eq("is_hidden", False) \
-                .neq("status", "SELESAI") \
-                .neq("status", "PENDING_REVIEW") \
-                .execute()
+        now = time.time()
+        active_reports = None
+        if self._active_damages_cache is not None and (now - self._active_damages_cache_time) < 10.0:
+            active_reports = self._active_damages_cache
+        else:
+            try:
+                res = self.client.table("reports") \
+                    .select("id, max_severity, latitude, longitude") \
+                    .eq("is_hidden", False) \
+                    .neq("status", "SELESAI") \
+                    .neq("status", "PENDING_REVIEW") \
+                    .execute()
+                active_reports = res.data or []
+                self._active_damages_cache = active_reports
+                self._active_damages_cache_time = now
+            except Exception as e:
+                print(f"[!] Error kalkulasi nearby: {e}")
+                return 0, None
 
-            from backend.app.services.geo import haversine_distance_meters
-            nearby_items = []
-            highest_sev = None
+        from backend.app.services.geo import haversine_distance_meters
+        nearby_items = []
+        highest_sev = None
 
-            for r in res.data:
-                dist = haversine_distance_meters(lat, lon, r["latitude"], r["longitude"])
-                if dist <= radius_m:
-                    nearby_items.append(r)
-                    sev = r["max_severity"]
-                    if highest_sev is None:
-                        highest_sev = sev
-                    elif sev == "BERAT":
-                        highest_sev = "BERAT"
-                    elif sev == "SEDANG" and highest_sev != "BERAT":
-                        highest_sev = "SEDANG"
+        for r in active_reports:
+            dist = haversine_distance_meters(lat, lon, r["latitude"], r["longitude"])
+            if dist <= radius_m:
+                nearby_items.append(r)
+                sev = r["max_severity"]
+                if highest_sev is None:
+                    highest_sev = sev
+                elif sev == "BERAT":
+                    highest_sev = "BERAT"
+                elif sev == "SEDANG" and highest_sev != "BERAT":
+                    highest_sev = "SEDANG"
 
-            return len(nearby_items), highest_sev
-        except Exception as e:
-            print(f"[!] Error kalkulasi nearby: {e}")
-            return 0, None
+        return len(nearby_items), highest_sev
 
     def get_reports(
         self,
@@ -182,6 +199,12 @@ class SupabaseService:
         if not self.client:
             return []
 
+        # Cek in-memory TTL cache (5 detik) untuk respons ultra-cepat
+        cache_key = f"{status}_{severity}_{include_hidden}_{limit}"
+        now = time.time()
+        if cache_key in self._reports_cache and (now - self._reports_cache_time.get(cache_key, 0)) < 5.0:
+            return self._reports_cache[cache_key]
+
         q = self.client.table("reports").select("*, detections(*)")
         if not include_hidden:
             q = q.eq("is_hidden", False)
@@ -191,7 +214,10 @@ class SupabaseService:
             q = q.eq("max_severity", severity)
 
         res = q.order("created_at", desc=True).limit(limit).execute()
-        return res.data or []
+        data = res.data or []
+        self._reports_cache[cache_key] = data
+        self._reports_cache_time[cache_key] = now
+        return data
 
     def get_report_by_id(self, report_id: int) -> Optional[Dict[str, Any]]:
         if not self.client:
@@ -241,6 +267,8 @@ class SupabaseService:
             target_id=report_id,
             details=f"Status diubah dari {old_status} ke {new_status}. is_hidden={is_hidden}. Catatan: {notes}"
         )
+        self._reports_cache.clear()
+        self._active_damages_cache = None
         return True
 
     def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
@@ -307,48 +335,13 @@ class SupabaseService:
 
     def get_system_settings(self) -> Dict[str, Any]:
         """
-        Mengambil konfigurasi sistem dinamis dari tabel `system_settings` di Supabase.
-        Jika belum ada di DB atau klien offline, gunakan default config.
+        Mengambil konfigurasi sistem dinamis secara instan dari singleton memori (0ms I/O).
         """
-        defaults = {
+        return {
             "confidence_threshold_min": settings.CONFIDENCE_THRESHOLD_MIN,
             "confidence_threshold_publish": settings.CONFIDENCE_THRESHOLD_PUBLISH,
             "proximity_radius_meters": settings.PROXIMITY_RADIUS_METERS
         }
-        if not self.client:
-            return defaults
-
-        try:
-            res = self.client.table("system_settings").select("key, value").execute()
-            if res.data:
-                for row in res.data:
-                    k = row.get("key")
-                    v = row.get("value")
-                    if k == "confidence_threshold_min" and v is not None:
-                        try:
-                            val = float(v)
-                            defaults["confidence_threshold_min"] = val
-                            settings.CONFIDENCE_THRESHOLD_MIN = val
-                        except ValueError:
-                            pass
-                    elif k == "confidence_threshold_publish" and v is not None:
-                        try:
-                            val = float(v)
-                            defaults["confidence_threshold_publish"] = val
-                            settings.CONFIDENCE_THRESHOLD_PUBLISH = val
-                        except ValueError:
-                            pass
-                    elif k == "proximity_radius_meters" and v is not None:
-                        try:
-                            val = int(float(v))
-                            defaults["proximity_radius_meters"] = val
-                            settings.PROXIMITY_RADIUS_METERS = val
-                        except ValueError:
-                            pass
-        except Exception as e:
-            print(f"[!] Gagal mengambil system_settings dari Supabase: {e}")
-
-        return defaults
 
     def update_system_settings(
         self,

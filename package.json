@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "audit:lighthouse": "lhci collect --url=http://localhost:5173",
+    "perf:check": "node -e \"console.log('Open DevTools console and run window.__POTHOLE_PERF__.printSummary()')\""
   },
   "dependencies": {
     "@types/leaflet": "^1.9.22",

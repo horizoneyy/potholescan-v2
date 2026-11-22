@@ -12,6 +12,7 @@ for _p in [str(_root_dir), str(_backend_dir)]:
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
@@ -68,6 +69,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Middleware Kompresi Respons GZip (WPO: kompresi JSON laporan & koordinat)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Mendaftarkan Router API
 app.include_router(auth_router)

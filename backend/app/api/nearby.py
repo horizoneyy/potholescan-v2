@@ -7,7 +7,7 @@ router = APIRouter(prefix="/api/nearby", tags=["Geospasial & Peringatan Dini"])
 supabase_svc = SupabaseService.get_instance()
 
 @router.get("", response_model=NearbyResponse)
-async def get_nearby_warnings(
+def get_nearby_warnings(
     lat: float = Query(..., ge=-90.0, le=90.0, description="Latitude pelapor"),
     lon: float = Query(..., ge=-180.0, le=180.0, description="Longitude pelapor"),
     radius_m: int = Query(500, ge=50, le=5000, description="Radius pencarian dalam meter")

@@ -66,7 +66,7 @@ export function Login({
         <button
           type="button"
           onClick={onBack}
-          className="flex w-fit items-center gap-2 text-sm text-slate-500 hover:text-ink"
+          className="inline-flex w-fit items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition hover:border-slate-700 hover:text-slate-900"
         >
           <ArrowLeft className="size-4" /> Kembali ke peta
         </button>

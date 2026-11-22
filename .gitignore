@@ -71,3 +71,15 @@ desktop.ini
 .figma/
 /.plugins/
 /.opencode-skills/
+
+# --- AI Agents & Coding Assistant Configurations (Local Only / Do Not Push) ---
+AGENTS.md
+CLAUDE.md
+.cursorrules
+.cursor/
+.claude/
+.agent/
+.agents/
+.gemini/
+.antigravity/
+.copilot/

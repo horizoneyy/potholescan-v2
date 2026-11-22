@@ -50,11 +50,26 @@ export function Staff({ user, reports, update, onLogout }: { user: User; reports
             <button key={id} title={label} aria-label={label} onClick={() => setPage(id)} className={`grid size-12 place-items-center rounded-2xl transition ${page === id ? 'bg-white text-ink' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}><Icon className="size-6" /></button>
           ))}
         </nav>
-        <button onClick={onLogout} aria-label="Keluar" title="Keluar" className="grid size-12 place-items-center rounded-2xl text-slate-400 hover:bg-white/10 hover:text-white"><LogOut className="size-6" /></button>
+        <button
+          onClick={onLogout}
+          aria-label="Keluar"
+          title="Keluar"
+          className="grid size-12 place-items-center rounded-2xl border-2 border-white/20 text-slate-300 transition hover:border-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
+        >
+          <LogOut className="size-6" />
+        </button>
       </aside>
 
       <div className="min-w-0 flex-1 p-5 sm:p-8">
-        <div className="no-print mb-4 flex items-center justify-between md:hidden"><Logo /><button onClick={onLogout} className="text-sm text-slate-500">Keluar</button></div>
+        <div className="no-print mb-4 flex items-center justify-between md:hidden">
+          <Logo />
+          <button
+            onClick={onLogout}
+            className="rounded-lg border-2 border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600"
+          >
+            Keluar
+          </button>
+        </div>
         <nav className="no-print mb-4 flex gap-2 overflow-x-auto md:hidden">
           {NAV.map(({ id, label }) => <button key={id} onClick={() => setPage(id)} className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium ${page === id ? 'bg-ink text-white' : 'bg-white border border-line'}`}>{label}</button>)}
         </nav>

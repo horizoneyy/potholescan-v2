@@ -120,7 +120,7 @@ async def submit_report(
     )
 
 @router.get("", response_model=ReportListResponse)
-async def list_reports(
+def list_reports(
     status_filter: Optional[StatusEnum] = Query(None, alias="status"),
     severity: Optional[SeverityEnum] = None,
     include_hidden: bool = False,
@@ -136,7 +136,7 @@ async def list_reports(
     return ReportListResponse(total=len(reports), items=reports)
 
 @router.get("/{id}")
-async def get_report_detail(id: int):
+def get_report_detail(id: int):
     """Melihat detail lengkap satu laporan"""
     report = supabase_svc.get_report_by_id(id)
     if not report:

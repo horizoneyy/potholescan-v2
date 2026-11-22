@@ -5,6 +5,7 @@ import { Card, Logo, SeverityBadge } from './ui'
 import { MapView } from './MapView'
 import { SEV_COLOR, todayIso, type Report, type Settings, type Severity } from '../data'
 import { submitReport, fetchNearby, type ApiReportResponse } from '../api'
+import { optimizeImageBeforeUpload } from '../utils/imageOptimizer'
 
 interface Result {
   severity: Severity
@@ -45,7 +46,7 @@ export function Public({
   const [srcLabel, setSrcLabel] = useState('Menunggu GPS aktif')
   const [nearbyCount, setNearbyCount] = useState<number>(0)
 
-  // Fetch real nearby warnings whenever coords change
+  // Fetch real nearby warnings whenever coords change (dioptimalkan agar tidak memicu fetch berulang saat state reports berubah)
   useEffect(() => {
     fetchNearby(userCoords.lat, userCoords.lon, settings.radius)
       .then((data) => setNearbyCount(data.unresolved_damages_count))
@@ -56,7 +57,7 @@ export function Public({
         ).length
         setNearbyCount(count)
       })
-  }, [userCoords, settings.radius, reports])
+  }, [userCoords.lat, userCoords.lon, settings.radius])
 
   // Get browser GPS with high accuracy
   function requestGps() {
@@ -140,8 +141,11 @@ export function Public({
     setErrorMsg(null)
 
     try {
+      // Optimasi ukuran citra di sisi klien sebelum pengiriman (WPO)
+      const uploadBlob = await optimizeImageBeforeUpload(fileBlob)
+
       // Panggilan nyata ke backend FastAPI (POST /api/reports)
-      const data: ApiReportResponse = await submitReport(fileBlob, userCoords.lat, userCoords.lon)
+      const data: ApiReportResponse = await submitReport(uploadBlob, userCoords.lat, userCoords.lon)
 
       if (data.status === 'NORMAL' || !data.detections || data.detections.length === 0) {
         setRes({
@@ -251,7 +255,7 @@ export function Public({
         <Logo />
         <button
           onClick={onLogin}
-          className="rounded-full border border-line bg-white px-5 py-2 text-sm font-medium transition hover:border-slate-300"
+          className="rounded-full border-2 border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-800 shadow-xs transition hover:border-slate-800 hover:bg-slate-50"
         >
           Masuk petugas
         </button>
