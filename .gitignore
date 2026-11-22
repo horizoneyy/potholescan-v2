@@ -83,3 +83,5 @@ CLAUDE.md
 .gemini/
 .antigravity/
 .copilot/
+ngrok.exe
+*.bat
