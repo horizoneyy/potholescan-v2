@@ -52,6 +52,9 @@ export interface ApiNearbyResponse {
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+const DEFAULT_HEADERS: Record<string, string> = {
+  "ngrok-skip-browser-warning": "true",
+};
 
 export async function submitReport(
   file: Blob | File,
@@ -65,6 +68,7 @@ export async function submitReport(
 
   const res = await fetch(`${API_BASE}/reports`, {
     method: "POST",
+    headers: DEFAULT_HEADERS,
     body: form,
   });
 
@@ -87,7 +91,9 @@ export async function fetchReports(
   if (severity && severity !== "ALL") params.append("severity", severity);
   if (includeHidden) params.append("include_hidden", "true");
 
-  const res = await fetch(`${API_BASE}/reports?${params.toString()}`);
+  const res = await fetch(`${API_BASE}/reports?${params.toString()}`, {
+    headers: DEFAULT_HEADERS,
+  });
   if (!res.ok) {
     throw new Error("Gagal mengambil daftar laporan.");
   }
@@ -101,6 +107,7 @@ export async function fetchNearby(
 ): Promise<ApiNearbyResponse> {
   const res = await fetch(
     `${API_BASE}/nearby?lat=${lat}&lon=${lon}&radius_m=${radius}`,
+    { headers: DEFAULT_HEADERS },
   );
   if (!res.ok) {
     throw new Error("Gagal memeriksa titik waspada terdekat.");
@@ -111,7 +118,7 @@ export async function fetchNearby(
 export async function loginApi(username: string, password: string) {
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...DEFAULT_HEADERS, "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
 
@@ -134,7 +141,7 @@ export async function updateReportStatusApi(
 ) {
   const res = await fetch(`${API_BASE}/reports/${id}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...DEFAULT_HEADERS, "Content-Type": "application/json" },
     body: JSON.stringify({
       new_status: newStatus,
       notes,
@@ -152,7 +159,7 @@ export async function updateReportStatusApi(
 }
 
 export async function fetchSettingsApi() {
-  const res = await fetch(`${API_BASE}/settings`);
+  const res = await fetch(`${API_BASE}/settings`, { headers: DEFAULT_HEADERS });
   if (!res.ok) throw new Error("Gagal mengambil pengaturan.");
   return res.json();
 }
@@ -164,7 +171,7 @@ export async function updateSettingsApi(settings: {
 }) {
   const res = await fetch(`${API_BASE}/settings`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...DEFAULT_HEADERS, "Content-Type": "application/json" },
     body: JSON.stringify({
       confidence_threshold_min: settings.min,
       confidence_threshold_publish: settings.publish,
@@ -196,7 +203,7 @@ export function getExcelDownloadUrl(
 }
 
 export async function fetchUsersApi() {
-  const res = await fetch(`${API_BASE}/auth/users`);
+  const res = await fetch(`${API_BASE}/auth/users`, { headers: DEFAULT_HEADERS });
   if (!res.ok) throw new Error("Gagal mengambil daftar pengguna.");
   return res.json();
 }
@@ -209,7 +216,7 @@ export async function createUserApi(user: {
 }) {
   const res = await fetch(`${API_BASE}/auth/users`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { ...DEFAULT_HEADERS, "Content-Type": "application/json" },
     body: JSON.stringify({
       username: user.username,
       password: user.password,
@@ -229,6 +236,7 @@ export async function createUserApi(user: {
 export async function deleteUserApi(userId: number) {
   const res = await fetch(`${API_BASE}/auth/users/${userId}`, {
     method: "DELETE",
+    headers: DEFAULT_HEADERS,
   });
   if (!res.ok) throw new Error("Gagal menghapus akun staf.");
   return res.json();
