@@ -41,6 +41,17 @@ class SupabaseService:
     def is_configured(self) -> bool:
         return self.client is not None
 
+    def check_connection(self) -> bool:
+        """Melakukan ping nyata ke tabel Supabase untuk memverifikasi koneksi aktif."""
+        if not self.client:
+            return False
+        try:
+            res = self.client.table("reports").select("id").limit(1).execute()
+            return res.data is not None
+        except Exception as e:
+            print(f"[!] Supabase ping gagal: {e}")
+            return False
+
     def upload_image(self, image_bytes: bytes, folder: str = "original", extension: str = "jpg") -> str:
         """
         Mengunggah berkas foto ke Supabase Storage (bucket: potholescan-media).
@@ -402,5 +413,25 @@ class SupabaseService:
         """
         Sinkronisasi parameter ambang batas dari tabel `system_settings` ke memori config saat startup.
         """
-        res = self.get_system_settings()
-        print(f"[+] Konfigurasi ambang AI disinkronkan dari Supabase: min={res['confidence_threshold_min']}, publish={res['confidence_threshold_publish']}, radius={res['proximity_radius_meters']}m")
+        if not self.client:
+            res = self.get_system_settings()
+            print(f"[+] Menggunakan konfigurasi lokal: min={res['confidence_threshold_min']}, publish={res['confidence_threshold_publish']}, radius={res['proximity_radius_meters']}m")
+            return
+        try:
+            res = self.client.table("system_settings").select("*").execute()
+            if res.data:
+                for row in res.data:
+                    k = row.get("key")
+                    v = row.get("value")
+                    if k == "confidence_threshold_min" and v is not None:
+                        settings.CONFIDENCE_THRESHOLD_MIN = float(v)
+                    elif k == "confidence_threshold_publish" and v is not None:
+                        settings.CONFIDENCE_THRESHOLD_PUBLISH = float(v)
+                    elif k == "proximity_radius_meters" and v is not None:
+                        settings.PROXIMITY_RADIUS_METERS = int(v)
+                print(f"[+] Konfigurasi ambang AI disinkronkan dari Supabase: min={settings.CONFIDENCE_THRESHOLD_MIN}, publish={settings.CONFIDENCE_THRESHOLD_PUBLISH}, radius={settings.PROXIMITY_RADIUS_METERS}m")
+            else:
+                res = self.get_system_settings()
+                print(f"[+] Tabel system_settings kosong, menggunakan default: min={res['confidence_threshold_min']}, publish={res['confidence_threshold_publish']}, radius={res['proximity_radius_meters']}m")
+        except Exception as e:
+            print(f"[!] Gagal sinkronisasi system_settings dari Supabase: {e}")

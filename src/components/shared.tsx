@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import { Download, EyeOff, FileText, Printer, X } from "lucide-react";
+import { Download, EyeOff, FileText, Loader2, Printer, X } from "lucide-react";
 import { Card, SeverityBadge, StatusBadge } from "./ui";
 import { STATUS_LABEL, todayIso, type Report, type Status } from "../data";
 import {
   getPdfDownloadUrl,
   getExcelDownloadUrl,
+  downloadExcelApi,
+  downloadPdfApi,
   updateReportStatusApi,
 } from "../api";
 import { DEFAULT_ROAD_IMG } from "./MapView";
@@ -258,14 +260,49 @@ export function RekapPage({ reports }: { reports: Report[] }) {
     [reports, from, to, st],
   );
 
-  function downloadExcel() {
-    const url = getExcelDownloadUrl(from, to, st);
-    window.open(url, "_blank");
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  async function handleDownloadExcel() {
+    setDownloadingExcel(true);
+    try {
+      const blob = await downloadExcelApi(from, to, st);
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `rekap-kerusakan-jalan-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    } catch (e: any) {
+      console.warn("API Excel download gagal, mencoba tautan URL langsung:", e);
+      const url = getExcelDownloadUrl(from, to, st);
+      window.open(url, "_blank");
+    } finally {
+      setDownloadingExcel(false);
+    }
   }
 
-  function downloadOfficialPdf() {
-    const url = getPdfDownloadUrl(from, to, st);
-    window.open(url, "_blank");
+  async function handleDownloadPdf() {
+    setDownloadingPdf(true);
+    try {
+      const blob = await downloadPdfApi(from, to, st);
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `rekap-resmi-potholescan-${from}_${to}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    } catch (e: any) {
+      console.warn("API PDF download gagal, mencoba tautan URL langsung:", e);
+      const url = getPdfDownloadUrl(from, to, st);
+      window.open(url, "_blank");
+    } finally {
+      setDownloadingPdf(false);
+    }
   }
 
   const field =
@@ -309,16 +346,28 @@ export function RekapPage({ reports }: { reports: Report[] }) {
         </label>
         <div className="ml-auto flex flex-wrap gap-2">
           <button
-            onClick={downloadExcel}
-            className="flex items-center gap-2 rounded-full border border-emerald-600 bg-emerald-50 px-5 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+            onClick={handleDownloadExcel}
+            disabled={downloadingExcel}
+            className="flex items-center gap-2 rounded-full border border-emerald-600 bg-emerald-50 px-5 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
           >
-            <Download className="size-4" /> Unduh Excel (.xlsx)
+            {downloadingExcel ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            {downloadingExcel ? "Mengunduh..." : "Unduh Excel (.xlsx)"}
           </button>
           <button
-            onClick={downloadOfficialPdf}
-            className="flex items-center gap-2 rounded-full border border-ink bg-white px-5 py-2.5 text-sm font-semibold text-ink hover:bg-soft"
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            className="flex items-center gap-2 rounded-full border border-ink bg-white px-5 py-2.5 text-sm font-semibold text-ink hover:bg-soft disabled:opacity-60"
           >
-            <FileText className="size-4" /> Unduh PDF
+            {downloadingPdf ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileText className="size-4" />
+            )}
+            {downloadingPdf ? "Menyiapkan PDF..." : "Unduh PDF"}
           </button>
           <button
             onClick={() => window.print()}

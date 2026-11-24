@@ -30,7 +30,14 @@ import {
 
 export default function App() {
   const [view, setView] = useState<"public" | "login">("public");
-  const [session, setSession] = useState<User | null>(null);
+  const [session, setSession] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem("potholescan_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [reports, setReports] = useState<Report[]>(initialReports);
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [settings, setSettings] = useState<Settings>(initialSettings);
@@ -214,7 +221,17 @@ export default function App() {
   const logout = () => {
     logoutApi().catch(() => {});
     setSession(null);
+    try {
+      localStorage.removeItem("potholescan_user");
+    } catch {}
     setView("public");
+  };
+
+  const handleLoginSuccess = (u: User) => {
+    setSession(u);
+    try {
+      localStorage.setItem("potholescan_user", JSON.stringify(u));
+    } catch {}
   };
 
   if (session?.role === "admin")
@@ -255,7 +272,7 @@ export default function App() {
           reports={reports}
           users={users}
           onBack={() => setView("public")}
-          onSuccess={setSession}
+          onSuccess={handleLoginSuccess}
         />
       </Suspense>
     );

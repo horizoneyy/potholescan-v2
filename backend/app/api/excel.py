@@ -22,20 +22,26 @@ async def export_excel(
     """
     all_reports = supabase_svc.get_reports(include_hidden=False, limit=1000)
 
+    # Sanitasi parameter query
+    f_date = from_date if isinstance(from_date, str) and from_date.strip() else None
+    t_date = to_date if isinstance(to_date, str) and to_date.strip() else None
+    st_val = status if isinstance(status, str) and status.strip() else "SEMUA"
+    is_all_status = st_val.upper() in ("SEMUA", "ALL")
+
     # Filter data jika parameter tanggal disertakan
     filtered = []
     for r in all_reports:
         c_date = str(r.get("created_at", ""))[:10]
-        if from_date and c_date < from_date:
+        if f_date and c_date < f_date:
             continue
-        if to_date and c_date > to_date:
+        if t_date and c_date > t_date:
             continue
-        if status and status != "SEMUA" and r.get("status") != status:
+        if not is_all_status and r.get("status") != st_val:
             continue
         filtered.append(r)
 
     # Jika filter tidak menyaring apa-apa, gunakan seluruh laporan aktif agar tidak kosong
-    if not filtered and not from_date and not to_date:
+    if not filtered and not f_date and not t_date:
         filtered = all_reports
 
     # Buat Workbook Excel
@@ -130,5 +136,8 @@ async def export_excel(
     return Response(
         content=output.getvalue(),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
     )

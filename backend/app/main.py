@@ -68,6 +68,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 # Middleware Kompresi Respons GZip (WPO: kompresi JSON laporan & koordinat)
@@ -92,8 +93,10 @@ async def root():
 
 @app.get("/api/health", tags=["Health"])
 async def health():
+    supabase_service = SupabaseService.get_instance()
+    is_connected = supabase_service.check_connection() if supabase_service.is_configured() else False
     return {
         "status": "healthy",
         "ai_engine": InferenceEngine.get_instance().model_version,
-        "supabase_connected": SupabaseService.get_instance().is_configured()
+        "supabase_connected": is_connected
     }

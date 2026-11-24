@@ -20,31 +20,33 @@ async def export_pdf(
     # Ambil seluruh laporan aktif dari Supabase
     all_reports = supabase_svc.get_reports(include_hidden=False, limit=500)
     
-    # Filter tanggal default
-    f_date = from_date or "2020-01-01"
-    t_date = to_date or "2099-12-31"
+    # Sanitasi parameter query
+    f_date = from_date if isinstance(from_date, str) and from_date.strip() else "2020-01-01"
+    t_date = to_date if isinstance(to_date, str) and to_date.strip() else "2099-12-31"
+    st_val = status if isinstance(status, str) and status.strip() else "SEMUA"
+    is_all_status = st_val.upper() in ("SEMUA", "ALL")
 
     # Filter berdasarkan rentang tanggal dan status
     filtered = []
     for r in all_reports:
         c_date = str(r.get("created_at", ""))[:10]
         if f_date <= c_date <= t_date:
-            if status == "SEMUA" or r.get("status") == status:
+            if is_all_status or r.get("status") == st_val:
                 filtered.append(r)
 
     # Jika filter menghasilkan list kosong namun data ada di DB, sertakan seluruh data agar PDF tidak kosong
     if not filtered and all_reports:
         filtered = all_reports
 
-    display_from = from_date or (str(filtered[0].get("created_at", ""))[:10] if filtered else "2026-01-01")
-    display_to = to_date or datetime.now().strftime("%Y-%m-%d")
+    display_from = (from_date if isinstance(from_date, str) and from_date.strip() else None) or (str(filtered[0].get("created_at", ""))[:10] if filtered else "2026-01-01")
+    display_to = (to_date if isinstance(to_date, str) and to_date.strip() else None) or datetime.now().strftime("%Y-%m-%d")
 
     # Buat dokumen PDF
     pdf_bytes = generate_reports_pdf(
         reports=filtered,
         from_date=display_from,
         to_date=display_to,
-        status_filter=status or "SEMUA"
+        status_filter=st_val
     )
 
     filename = f"rekap-resmi-potholescan-{display_from}_{display_to}.pdf"

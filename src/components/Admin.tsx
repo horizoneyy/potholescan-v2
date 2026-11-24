@@ -13,6 +13,7 @@ import {
 import { Card, Logo, SeverityBadge } from "./ui";
 import { MapView } from "./MapView";
 import { EditModal, RekapPage, ReportTable } from "./shared";
+import { checkHealthApi } from "../api";
 import {
   SEV_COLOR,
   type LogEntry,
@@ -595,6 +596,14 @@ function Thresholds({
 }
 
 function DatabaseSchemaCard() {
+  const [supabaseConnected, setSupabaseConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkHealthApi()
+      .then((res) => setSupabaseConnected(res.supabase_connected))
+      .catch(() => setSupabaseConnected(false));
+  }, []);
+
   return (
     <Card className="max-w-3xl p-8">
       <div className="flex items-center justify-between border-b border-line pb-4">
@@ -606,9 +615,23 @@ function DatabaseSchemaCard() {
             Struktur relasional sistem GIS & inferensi AI PotholeScan
           </p>
         </div>
-        <span className="rounded-full bg-emerald-50 px-3 py-1 font-mono text-[11px] font-semibold text-emerald-700">
-          PostGIS 3.4 Active
-        </span>
+        <div className="flex items-center gap-2">
+          {supabaseConnected === null ? (
+            <span className="rounded-full bg-slate-100 px-3 py-1 font-mono text-[11px] font-semibold text-slate-600">
+              Memeriksa Supabase...
+            </span>
+          ) : supabaseConnected ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 font-mono text-[11px] font-semibold text-emerald-700">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              Supabase Terhubung (PostGIS 3.4)
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 font-mono text-[11px] font-semibold text-amber-700">
+              <span className="size-2 rounded-full bg-amber-500" />
+              Supabase Mode Fallback
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="mt-5 space-y-4">

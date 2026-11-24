@@ -110,3 +110,28 @@ def test_create_and_delete_user():
     )
     assert del_res.status_code == 200
     assert del_res.json()["success"] is True
+
+def test_export_excel_and_pdf():
+    # 1. Login admin
+    login_res = client.post("/api/auth/login", json={"username": "admin", "password": "admin123"})
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+
+    # 2. Test Excel export dengan Bearer header
+    excel_res = client.get(
+        "/api/reports/export/excel?status=ALL",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert excel_res.status_code == 200
+    assert "spreadsheetml.sheet" in excel_res.headers.get("content-type", "")
+    assert len(excel_res.content) > 1000
+
+    # 3. Test Excel export dengan token query param (untuk direct browser navigation)
+    excel_query_res = client.get(f"/api/reports/export/excel?status=ALL&token={token}")
+    assert excel_query_res.status_code == 200
+    assert "spreadsheetml.sheet" in excel_query_res.headers.get("content-type", "")
+
+    # 4. Test PDF export dengan token query param
+    pdf_query_res = client.get(f"/api/reports/pdf?status=ALL&token={token}")
+    assert pdf_query_res.status_code == 200
+    assert "application/pdf" in pdf_query_res.headers.get("content-type", "")
