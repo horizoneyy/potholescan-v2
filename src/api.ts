@@ -344,3 +344,18 @@ export async function deleteUserApi(userId: number) {
   if (!res.ok) throw new Error("Gagal menghapus akun staf.");
   return res.json();
 }
+
+export async function deleteReportApi(reportId: number) {
+  const res = await fetch(`${API_BASE}/reports/${reportId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res
+      .json()
+      .catch(() => ({ detail: "Gagal menghapus laporan." }));
+    throw new Error(err.detail || "Gagal menghapus laporan.");
+  }
+  return res.json();
+}

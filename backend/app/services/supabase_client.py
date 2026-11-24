@@ -282,6 +282,33 @@ class SupabaseService:
         self._active_damages_cache = None
         return True
 
+    def delete_report(self, report_id: int) -> bool:
+        """Menghapus laporan dan foto terkait secara permanen dari Supabase."""
+        if not self.client:
+            return True
+        try:
+            # Ambil URL foto untuk dibersihkan dari Storage
+            rep = self.client.table("reports").select("image_url, annotated_image_url").eq("id", report_id).execute()
+            if rep.data:
+                for row in rep.data:
+                    for url_key in ["image_url", "annotated_image_url"]:
+                        u = row.get(url_key)
+                        if u and f"{settings.SUPABASE_STORAGE_BUCKET}/" in u:
+                            try:
+                                path_part = u.split(f"{settings.SUPABASE_STORAGE_BUCKET}/")[-1]
+                                self.client.storage.from_(settings.SUPABASE_STORAGE_BUCKET).remove([path_part])
+                            except Exception:
+                                pass
+
+            # Hapus baris dari reports (cascade ke detections dan status_history)
+            self.client.table("reports").delete().eq("id", report_id).execute()
+            self._reports_cache.clear()
+            self._active_damages_cache = None
+            return True
+        except Exception as e:
+            print(f"[ERR] Gagal menghapus laporan #{report_id}: {e}")
+            return False
+
     def get_user_by_username(self, username: str) -> Optional[Dict[str, Any]]:
         if not self.client:
             return None

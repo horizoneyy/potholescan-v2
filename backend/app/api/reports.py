@@ -168,3 +168,30 @@ async def update_status(
         "is_hidden": payload.hide_false_positive,
         "changed_by": actor
     }
+
+@router.delete("/{id}", dependencies=[Depends(require_role(["petugas", "admin"]))])
+async def delete_report(
+    id: int,
+    current_user: dict = Depends(get_current_user_from_cookie)
+):
+    """Menghapus laporan kerusakan jalan palsu / fake report (khusus petugas & admin)"""
+    actor = current_user.get("sub", "petugas")
+    success = supabase_svc.delete_report(id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Gagal menghapus laporan #{id} dari basis data."
+        )
+
+    supabase_svc.log_audit(
+        actor=actor,
+        action="DELETE_REPORT",
+        target_entity="reports",
+        target_id=id,
+        details=f"Laporan #{id} dihapus permanen oleh {actor} karena palsu/tidak valid."
+    )
+    return {
+        "success": True,
+        "report_id": id,
+        "message": f"Laporan #{id} berhasil dihapus permanen."
+    }

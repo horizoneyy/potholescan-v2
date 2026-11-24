@@ -135,3 +135,22 @@ def test_export_excel_and_pdf():
     pdf_query_res = client.get(f"/api/reports/pdf?status=ALL&token={token}")
     assert pdf_query_res.status_code == 200
     assert "application/pdf" in pdf_query_res.headers.get("content-type", "")
+
+def test_delete_report_permissions():
+    anon_client = TestClient(app)
+    # 1. Non-authenticated delete harus ditolak 401
+    res = anon_client.delete("/api/reports/999999")
+    assert res.status_code == 401
+
+    # 2. Staff (petugas) login dan berhak menghapus laporan palsu
+    login_res = anon_client.post("/api/auth/login", json={"username": "daniel", "password": "petugas123"})
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+
+    del_res = anon_client.delete(
+        "/api/reports/999999",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    # Laporan 999999 tidak ada di database maka 500/200, membuktikan permission lolos (bukan 401/403)
+    assert del_res.status_code in [200, 500]
+

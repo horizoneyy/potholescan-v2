@@ -15,7 +15,7 @@ const NAV: { id: Page; label: string; icon: typeof Map }[] = [
 ]
 const TITLE: Record<Page, string> = { ringkasan: 'Dashboard operasional', peta: 'Peta lapangan', laporan: 'Laporan masuk', rekap: 'Rekap' }
 
-export function Staff({ user, reports, update, onLogout }: { user: User; reports: Report[]; update: (id: number, p: Partial<Report>, from: Status, hide: boolean) => void; onLogout: () => void }) {
+export function Staff({ user, reports, update, deleteReport, onLogout }: { user: User; reports: Report[]; update: (id: number, p: Partial<Report>, from: Status, hide: boolean) => void; deleteReport?: (id: number) => void; onLogout: () => void }) {
   const [page, setPage] = useState<Page>('ringkasan')
   const [tab, setTab] = useState<Tab>('pending')
   const [edit, setEdit] = useState<Report | null>(null)
@@ -37,7 +37,7 @@ export function Staff({ user, reports, update, onLogout }: { user: User; reports
           ))}
         </div>
       </div>
-      <ReportTable rows={rows} onOpen={setEdit} />
+      <ReportTable rows={rows} onOpen={setEdit} onDelete={deleteReport} />
     </Card>
   )
 
@@ -115,7 +115,7 @@ export function Staff({ user, reports, update, onLogout }: { user: User; reports
         {page === 'laporan' && <div className="mt-8">{table}</div>}
         {page === 'rekap' && <div className="mt-8"><RekapPage reports={reports} /></div>}
       </div>
-      {edit && <EditModal report={edit} onClose={() => setEdit(null)} onSave={(id, p, from, hide) => { update(id, p, from, hide); setEdit(null) }} />}
+      {edit && <EditModal report={edit} onClose={() => setEdit(null)} onSave={(id, p, from, hide) => { update(id, p, from, hide); setEdit(null) }} onDelete={deleteReport} />}
     </div>
   )
 }

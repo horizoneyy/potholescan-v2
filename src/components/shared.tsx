@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, EyeOff, FileText, Loader2, Printer, X } from "lucide-react";
+import { Download, EyeOff, FileText, Loader2, Printer, Trash2, X } from "lucide-react";
 import { Card, SeverityBadge, StatusBadge } from "./ui";
 import { STATUS_LABEL, todayIso, type Report, type Status } from "../data";
 import {
@@ -21,10 +21,12 @@ const STATUSES: Status[] = [
 export function ReportTable({
   rows,
   onOpen,
+  onDelete,
   readOnly = false,
 }: {
   rows: Report[];
   onOpen?: (r: Report) => void;
+  onDelete?: (id: number) => void;
   readOnly?: boolean;
 }) {
   return (
@@ -83,14 +85,37 @@ export function ReportTable({
               <td className="px-3">
                 <StatusBadge s={r.status} />
               </td>
-              {!readOnly && onOpen && (
+              {!readOnly && (
                 <td className="px-5 text-right">
-                  <button
-                    onClick={() => onOpen(r)}
-                    className="rounded-full border border-line px-4 py-1.5 text-xs font-semibold hover:bg-ink hover:text-white"
-                  >
-                    {r.status === "SELESAI" ? "Info" : "Ubah"}
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    {onOpen && (
+                      <button
+                        onClick={() => onOpen(r)}
+                        className="rounded-full border border-line px-4 py-1.5 text-xs font-semibold hover:bg-ink hover:text-white"
+                      >
+                        {r.status === "SELESAI" ? "Info" : "Ubah"}
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Hapus Laporan #${r.id} secara permanen dari sistem karena foto palsu?`,
+                            )
+                          ) {
+                            onDelete(r.id);
+                          }
+                        }}
+                        title="Hapus laporan palsu"
+                        aria-label={`Hapus laporan #${r.id}`}
+                        className="grid size-7 place-items-center rounded-full border border-red-200 text-red-500 transition hover:bg-red-50 hover:text-red-700"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               )}
             </tr>
@@ -105,6 +130,7 @@ export function EditModal({
   report,
   onClose,
   onSave,
+  onDelete,
 }: {
   report: Report;
   onClose: () => void;
@@ -114,6 +140,7 @@ export function EditModal({
     from: Status,
     hide: boolean,
   ) => void;
+  onDelete?: (id: number) => void;
 }) {
   const [status, setStatus] = useState<Status>(
     report.status === "PENDING_REVIEW" ? "BARU" : report.status,
@@ -121,7 +148,27 @@ export function EditModal({
   const [notes, setNotes] = useState(report.notes ?? "");
   const [hide, setHide] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const locked = report.status === "SELESAI";
+
+  async function handleDelete() {
+    if (
+      !window.confirm(
+        `Apakah Anda yakin ingin menghapus Laporan #${report.id} secara permanen dari basis data? Tindakan ini menghapus foto dan titik lokasi karena terbukti palsu.`,
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      if (onDelete) {
+        await onDelete(report.id);
+      }
+    } finally {
+      setDeleting(false);
+      onClose();
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -216,22 +263,37 @@ export function EditModal({
             Sembunyikan laporan ini (false positive)
           </label>
         )}
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-full border border-line px-5 py-2.5 text-sm font-semibold hover:bg-soft"
-          >
-            {locked ? "Tutup" : "Batal"}
-          </button>
-          {!locked && (
+        <div className="mt-6 flex items-center justify-between gap-2">
+          {onDelete && !locked ? (
             <button
-              disabled={saving}
-              onClick={handleSave}
-              className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+              type="button"
+              disabled={deleting || saving}
+              onClick={handleDelete}
+              className="flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+              title="Hapus laporan ini jika terbukti palsu atau salah deteksi"
             >
-              {saving ? "Menyimpan…" : "Simpan progres"}
+              <Trash2 className="size-3.5" />
+              {deleting ? "Menghapus…" : "Hapus Laporan Palsu"}
             </button>
-          )}
+          ) : <div />}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              disabled={deleting || saving}
+              className="rounded-full border border-line px-5 py-2.5 text-sm font-semibold hover:bg-soft disabled:opacity-50"
+            >
+              {locked ? "Tutup" : "Batal"}
+            </button>
+            {!locked && (
+              <button
+                disabled={saving || deleting}
+                onClick={handleSave}
+                className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+              >
+                {saving ? "Menyimpan…" : "Simpan progres"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

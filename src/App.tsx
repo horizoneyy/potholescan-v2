@@ -24,6 +24,7 @@ import {
   fetchUsersApi,
   createUserApi,
   deleteUserApi,
+  deleteReportApi,
   logoutApi,
   updateSettingsApi,
 } from "./api";
@@ -139,6 +140,21 @@ export default function App() {
       hide ? "HIDE_REPORT" : "STATUS_CHANGE",
       `reports #${id}`,
       hide ? "Ditandai false positive" : `${from} -> ${patch.status}`,
+    );
+  };
+
+  const handleDeleteReport = async (id: number) => {
+    try {
+      await deleteReportApi(id);
+    } catch (e) {
+      console.warn("API delete report failed, removing locally:", e);
+    }
+    setReports((p) => p.filter((r) => r.id !== id));
+    log(
+      session?.username || "petugas",
+      "DELETE_REPORT",
+      `reports #${id}`,
+      "Laporan jalan rusak (fake/salah deteksi) dihapus permanen oleh petugas",
     );
   };
 
@@ -260,6 +276,7 @@ export default function App() {
           user={session}
           reports={reports}
           update={update}
+          deleteReport={handleDeleteReport}
           onLogout={logout}
         />
       </Suspense>
