@@ -47,7 +47,7 @@ export default function App() {
   useEffect(() => {
     fetchReports()
       .then((data) => {
-        if (data.items && data.items.length > 0) {
+        if (data && Array.isArray(data.items)) {
           const apiMapped: Report[] = data.items.map((it) => ({
             id: it.id,
             street:
@@ -68,11 +68,11 @@ export default function App() {
             img: it.image_url,
             annotated_img: it.annotated_image_url,
           }));
-          // Gunakan data riil dari Supabase
+          // Gunakan data riil dari Supabase (termasuk list kosong [])
           setReports(apiMapped);
         }
       })
-      .catch((e) => console.log("Menggunakan data offline/seed:", e));
+      .catch((e) => console.log("Gagal memuat laporan Supabase:", e));
 
     fetchSettingsApi()
       .then((s) => {

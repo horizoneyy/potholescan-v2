@@ -219,10 +219,7 @@ const raw: Omit<Report, "iso">[] = [
   },
 ];
 
-export const initialReports: Report[] = raw.map((r) => ({
-  ...r,
-  iso: toIso(r.date),
-}));
+export const initialReports: Report[] = [];
 
 export type Role = "petugas" | "admin";
 export interface User {
@@ -278,32 +275,7 @@ export const initialSettings: Settings = {
   publish: 0.65,
   radius: 500,
 };
-export const initialLogs: LogEntry[] = [
-  {
-    id: 3,
-    actor: "admin",
-    action: "UPDATE_SETTING",
-    target: "system_settings",
-    details: "confidence_threshold_publish = 0.65",
-    at: "16 Nov 2026 08:12",
-  },
-  {
-    id: 2,
-    actor: "admin",
-    action: "CREATE_USER",
-    target: "users",
-    details: "Akun petugas02 dibuat",
-    at: "15 Nov 2026 14:03",
-  },
-  {
-    id: 1,
-    actor: "petugas01",
-    action: "STATUS_CHANGE",
-    target: "reports #2054",
-    details: "BARU -> DIVERIFIKASI",
-    at: "15 Nov 2026 10:41",
-  },
-];
+export const initialLogs: LogEntry[] = [];
 export const nowStamp = () =>
   new Date().toLocaleString("id-ID", {
     day: "2-digit",
